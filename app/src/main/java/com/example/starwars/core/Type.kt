@@ -2,9 +2,12 @@ package com.example.starwars.core
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.starwars.R
 
 // Set of Material typography styles to start with
 val Typography = Typography(
@@ -31,4 +34,8 @@ val Typography = Typography(
         letterSpacing = 0.5.sp
     )
     */
+)
+
+val customFonts = FontFamily(
+    Font(R.font.starjedi_specialedition, FontWeight.W400, FontStyle.Normal),
 )

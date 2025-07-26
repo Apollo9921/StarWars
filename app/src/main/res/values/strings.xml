@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">StarWars</string>
+    <string name="app_intro">Here you will find all the information you need  about your favorite characters, their ships and their planets</string>
+    <string name="app_intro_description">May the force be with you</string>
+    <string name="characters">Characters</string>
+    <string name="ships">Ships</string>
+    <string name="planets">Planets</string>
 </resources>
