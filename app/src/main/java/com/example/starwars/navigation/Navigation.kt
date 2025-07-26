@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.starwars.screens.HomeScreen
+import com.example.starwars.screens.SearchScreen
 
 @Composable
 fun BasicNavigation() {
@@ -17,6 +18,10 @@ fun BasicNavigation() {
     ) {
         composable(route = Screen.Home.route) {
             HomeScreen(navController = navController)
+        }
+        composable(route = Screen.Search.route) {
+            val optionSelected = navController.currentBackStackEntry?.arguments?.getString("optionSelected")
+            SearchScreen(navController = navController, optionSelected = optionSelected ?: "")
         }
     }
 }

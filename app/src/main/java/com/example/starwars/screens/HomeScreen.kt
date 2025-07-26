@@ -89,7 +89,7 @@ private fun HomeScreenContent(navController: NavHostController, paddingValues: P
             buttonOptions.forEach {
                 Button(
                     onClick = {
-                        //TODO handle button click
+                        navController.navigate("search/$it")
                     },
                     shape = RoundedCornerShape(percent = 30),
                     colors = ButtonDefaults.buttonColors(
