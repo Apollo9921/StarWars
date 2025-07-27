@@ -1,12 +1,12 @@
 package com.example.starwars.koin
 
-import com.example.starwars.networking.model.characters.Characters
-import com.example.starwars.networking.model.planets.Planets
-import com.example.starwars.networking.model.ships.Ships
+import com.example.starwars.networking.model.characters.CharactersItem
+import com.example.starwars.networking.model.planets.PlanetsItem
+import com.example.starwars.networking.model.ships.ShipsItem
 import retrofit2.Response
 
 interface StarWarsRepository {
-    suspend fun getAllCharacters(): Response<Characters>
-    suspend fun getAllPlanets(): Response<Planets>
-    suspend fun getAllStarships(): Response<Ships>
+    suspend fun getAllCharacters(): Response<List<CharactersItem>>
+    suspend fun getAllPlanets(): Response<List<PlanetsItem>>
+    suspend fun getAllStarships(): Response<List<ShipsItem>>
 }

@@ -1,9 +1,11 @@
 package com.example.starwars.koin
 
 import com.example.starwars.networking.instance.Instance
+import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.network.NetworkConnectivityObserver
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
@@ -17,6 +19,10 @@ val appModule = module {
 
     single<ConnectivityObserver> {
         NetworkConnectivityObserver(androidContext())
+    }
+
+    viewModel {
+        SearchViewModel(get(), get())
     }
 
 }

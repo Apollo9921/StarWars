@@ -12,23 +12,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.starwars.core.customFonts
+import com.example.starwars.networking.model.characters.CharactersItem
+import com.example.starwars.networking.model.planets.PlanetsItem
+import com.example.starwars.networking.model.ships.ShipsItem
 import com.example.starwars.utils.size.ScreenSizeUtils
 
 @Composable
-fun ListResults(name: String) {
+fun ListResults(
+    allCharacters: List<CharactersItem>?,
+    allPlanets: List<PlanetsItem>?,
+    allVehicles: List<ShipsItem>?
+) {
     val resultTextSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 20).sp
-    val numberItems = listOf(
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-    )
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(start = 25.dp, end = 25.dp, bottom = 60.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        items(numberItems.size) {
+        items(allCharacters?.size ?: 0) { characterItem ->
             Text(
-                text = "$name name $it",
+                text = allCharacters?.get(characterItem)?.name ?: "",
+                fontFamily = customFonts,
+                fontSize = resultTextSize,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
+            )
+        }
+        items(allPlanets?.size ?: 0) { planetItem ->
+            Text(
+                text = allPlanets?.get(planetItem)?.name ?: "",
+                fontFamily = customFonts,
+                fontSize = resultTextSize,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
+            )
+        }
+        items(allVehicles?.size ?: 0) { vehicleItem ->
+            Text(
+                text = allVehicles?.get(vehicleItem)?.name ?: "",
                 fontFamily = customFonts,
                 fontSize = resultTextSize,
                 color = MaterialTheme.colorScheme.primary,

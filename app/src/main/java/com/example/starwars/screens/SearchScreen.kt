@@ -24,6 +24,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -36,6 +37,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,13 +61,41 @@ import com.example.starwars.components.TopBarWithImage
 import com.example.starwars.core.SearchBar
 import com.example.starwars.core.SearchBarText
 import com.example.starwars.core.customFonts
+import com.example.starwars.networking.viewModel.SearchViewModel
+import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.size.ScreenSizeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
+
+private var viewModel: SearchViewModel? = null
+var option = mutableStateOf("")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(navController: NavHostController, optionSelected: String) {
+    option.value = optionSelected
+    viewModel = koinViewModel<SearchViewModel>()
+    var isConnected = remember { mutableStateOf(false) }
+    val networkStatus = viewModel?.networkStatus?.collectAsState()
+    if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
+        isConnected.value = true
+        when (option.value) {
+            "Characters" -> viewModel?.getCharacters()
+            "Planets" -> viewModel?.getPlanets()
+            "Ships" -> viewModel?.getVehicles()
+        }
+    }
+
+    val isLoading = viewModel?.isLoading?.value
+    val isSuccess = viewModel?.isSuccess?.value
+    val isError = viewModel?.isError?.value
+    val errorMessage = viewModel?.errorMessage?.value
+
+    val allCharacters = viewModel?.allCharacters
+    val allPlanets = viewModel?.allPlanets
+    val allVehicles = viewModel?.allVehicles
+
     val context = LocalContext.current
     val activity = context as? Activity
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -136,7 +166,35 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
             )
             Spacer(modifier = Modifier.padding(10.dp))
             SearchBar(optionSelected, scope, scaffoldState)
-            ListResults(optionSelected)
+            when {
+                isLoading == true -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+                isError == true -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = errorMessage ?: "Unknown error",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = customFonts,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+                isSuccess == true -> {
+                    ListResults(allCharacters, allPlanets, allVehicles)
+                }
+            }
         }
     }
 }
