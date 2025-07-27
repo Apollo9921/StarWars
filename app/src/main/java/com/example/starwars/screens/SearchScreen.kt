@@ -38,6 +38,7 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +72,7 @@ import com.example.starwars.networking.model.ships.ShipsItem
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.size.ScreenSizeUtils
+import com.example.starwars.utils.sort.Sorting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -79,6 +81,8 @@ private var viewModel: SearchViewModel? = null
 private var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 private var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
 private var allShips: SnapshotStateList<ShipsItem>? = mutableStateListOf<ShipsItem>()
+private var sortOptionNameSelected = mutableIntStateOf(0)
+private var sortOptionSelected = mutableIntStateOf(0)
 var option = mutableStateOf("")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -258,6 +262,11 @@ private fun SearchBar(
                         newCharacters?.let {
                             allCharacters?.addAll(it)
                         }
+                        if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 0) {
+                            sortCharactersNameAscendant()
+                        } else if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 1) {
+                            sortCharactersNameDescendant()
+                        }
                     }
 
                     planets -> {
@@ -266,6 +275,11 @@ private fun SearchBar(
                         newCharacters?.let {
                             allPlanets?.addAll(it)
                         }
+                        if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 0) {
+                            sortPlanetsNameAscendant()
+                        } else if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 1) {
+                            sortPlanetsNameDescendant()
+                        }
                     }
 
                     ships -> {
@@ -273,6 +287,11 @@ private fun SearchBar(
                         allShips?.clear()
                         newCharacters?.let {
                             allShips?.addAll(it)
+                        }
+                        if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 0) {
+                            sortShipsNameAscendant()
+                        } else if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 1) {
+                            sortShipsNameDescendant()
                         }
                     }
                 }
@@ -319,12 +338,17 @@ private fun FilterSortRow(
     val imageSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
     val buttonOptionsText = ScreenSizeUtils.calculateCustomWidth(baseSize = 13).sp
     val arrowSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 30).dp
+
+    val character = stringResource(R.string.characters)
+    val planet = stringResource(R.string.planets)
+    val ship = stringResource(R.string.ships)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (optionSelected == "Characters") {
+        if (optionSelected == stringResource(R.string.characters)) {
             Image(
                 painter = painterResource(R.drawable.sliders),
                 contentDescription = "Icon 1",
@@ -337,11 +361,11 @@ private fun FilterSortRow(
         }
         Spacer(modifier = Modifier.padding(25.dp))
         Button(
-            onClick = { /* ... */ },
+            onClick = { sortOptionNameSelected.intValue = 0 },
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
             shape = RoundedCornerShape(percent = 50),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = if (sortOptionNameSelected.intValue == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
             modifier = Modifier
@@ -349,7 +373,7 @@ private fun FilterSortRow(
                 .height(arrowSize)
         ) {
             Text(
-                text = "NAME",
+                text = stringResource(R.string.sort_name),
                 maxLines = 1,
                 fontFamily = customFonts,
                 fontSize = buttonOptionsText,
@@ -358,11 +382,11 @@ private fun FilterSortRow(
         }
         Spacer(modifier = Modifier.padding(4.dp))
         Button(
-            onClick = { /* ... */ },
+            onClick = { sortOptionNameSelected.intValue = 1 },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.tertiary,
+                containerColor = if (sortOptionNameSelected.intValue == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
             modifier = Modifier
@@ -370,7 +394,7 @@ private fun FilterSortRow(
                 .height(arrowSize)
         ) {
             Text(
-                text = "YEAR",
+                text = stringResource(R.string.sort_year),
                 maxLines = 1,
                 fontFamily = customFonts,
                 fontSize = buttonOptionsText,
@@ -379,11 +403,22 @@ private fun FilterSortRow(
         }
         Spacer(modifier = Modifier.padding(4.dp))
         Button(
-            onClick = { /* ... */ },
+            onClick = {
+                sortOptionSelected.intValue = 0
+                if (sortOptionNameSelected.intValue == 0) {
+                    if (optionSelected == character) {
+                        sortCharactersNameAscendant()
+                    } else if (optionSelected == planet) {
+                        sortPlanetsNameAscendant()
+                    } else if (optionSelected == ship) {
+                        sortShipsNameAscendant()
+                    }
+                }
+            },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = if (sortOptionSelected.intValue == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
             modifier = Modifier
@@ -398,11 +433,22 @@ private fun FilterSortRow(
         }
         Spacer(modifier = Modifier.padding(4.dp))
         Button(
-            onClick = { /* ... */ },
+            onClick = {
+                sortOptionSelected.intValue = 1
+                if (sortOptionNameSelected.intValue == 0) {
+                    if (optionSelected == character) {
+                        sortCharactersNameDescendant()
+                    } else if (optionSelected == planet) {
+                        sortPlanetsNameDescendant()
+                    } else if (optionSelected == ship) {
+                        sortShipsNameDescendant()
+                    }
+                }
+            },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.tertiary,
+                containerColor = if (sortOptionSelected.intValue == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
             modifier = Modifier
@@ -415,5 +461,53 @@ private fun FilterSortRow(
                 modifier = Modifier.size(arrowSize)
             )
         }
+    }
+}
+
+private fun sortCharactersNameAscendant() {
+    val newCharacters  = Sorting.sortCharactersByNameAscendant(allCharacters)
+    allCharacters?.clear()
+    newCharacters?.let {
+        allCharacters?.addAll(it)
+    }
+}
+
+private fun sortCharactersNameDescendant() {
+    val newCharacters  = Sorting.sortCharactersByNameDescendant(allCharacters)
+    allCharacters?.clear()
+    newCharacters?.let {
+        allCharacters?.addAll(it)
+    }
+}
+
+private fun sortPlanetsNameAscendant() {
+    val newCharacters  = Sorting.sortPlanetsByNameAscendant(allPlanets)
+    allPlanets?.clear()
+    newCharacters?.let {
+        allPlanets?.addAll(it)
+    }
+}
+
+private fun sortPlanetsNameDescendant() {
+    val newCharacters  = Sorting.sortPlanetsByNameDescendant(allPlanets)
+    allPlanets?.clear()
+    newCharacters?.let {
+        allPlanets?.addAll(it)
+    }
+}
+
+private fun sortShipsNameAscendant() {
+    val newCharacters  = Sorting.sortVehiclesByNameAscendant(allShips)
+    allShips?.clear()
+    newCharacters?.let {
+        allShips?.addAll(it)
+    }
+}
+
+private fun sortShipsNameDescendant() {
+    val newCharacters  = Sorting.sortVehiclesByNameDescendant(allShips)
+    allShips?.clear()
+    newCharacters?.let {
+        allShips?.addAll(it)
     }
 }

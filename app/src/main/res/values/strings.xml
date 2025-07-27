@@ -9,4 +9,6 @@
     <string name="filter_specie_option">Specie</string>
     <string name="filter_gender_option">Gender</string>
     <string name="filter_confirm_changes">Search</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_year">Year</string>
 </resources>
