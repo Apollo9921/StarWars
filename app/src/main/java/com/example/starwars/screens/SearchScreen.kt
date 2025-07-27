@@ -38,15 +38,19 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,6 +65,9 @@ import com.example.starwars.components.TopBarWithImage
 import com.example.starwars.core.SearchBar
 import com.example.starwars.core.SearchBarText
 import com.example.starwars.core.customFonts
+import com.example.starwars.networking.model.characters.CharactersItem
+import com.example.starwars.networking.model.planets.PlanetsItem
+import com.example.starwars.networking.model.ships.ShipsItem
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.size.ScreenSizeUtils
@@ -69,6 +76,9 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 private var viewModel: SearchViewModel? = null
+private var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
+private var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
+private var allShips: SnapshotStateList<ShipsItem>? = mutableStateListOf<ShipsItem>()
 var option = mutableStateOf("")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,20 +91,20 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
     if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
         isConnected.value = true
         when (option.value) {
-            "Characters" -> viewModel?.getCharacters()
-            "Planets" -> viewModel?.getPlanets()
-            "Ships" -> viewModel?.getVehicles()
+            stringResource(R.string.characters) -> viewModel?.getCharacters()
+            stringResource(R.string.ships) -> viewModel?.getVehicles()
+            stringResource(R.string.planets) -> viewModel?.getPlanets()
         }
     }
 
     val isLoading = viewModel?.isLoading?.value
-    val isSuccess = viewModel?.isSuccess?.value
+    var isSuccess = viewModel?.isSuccess?.value
     val isError = viewModel?.isError?.value
     val errorMessage = viewModel?.errorMessage?.value
 
-    val allCharacters = viewModel?.allCharacters
-    val allPlanets = viewModel?.allPlanets
-    val allVehicles = viewModel?.allVehicles
+    allCharacters = viewModel?.allCharacters?.toMutableStateList()
+    allPlanets = viewModel?.allPlanets?.toMutableStateList()
+    allShips = viewModel?.allVehicles?.toMutableStateList()
 
     val context = LocalContext.current
     val activity = context as? Activity
@@ -177,6 +187,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                         )
                     }
                 }
+
                 isError == true -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -191,8 +202,9 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                         )
                     }
                 }
+
                 isSuccess == true -> {
-                    ListResults(allCharacters, allPlanets, allVehicles)
+                    ListResults(allCharacters, allPlanets, allShips)
                 }
             }
         }
@@ -232,10 +244,38 @@ private fun SearchBar(
             lineHeight = 32.sp
         )
         Spacer(modifier = Modifier.padding(10.dp))
+        val characters = stringResource(R.string.characters)
+        val planets = stringResource(R.string.planets)
+        val ships = stringResource(R.string.ships)
         TextField(
             value = searchText.value,
             onValueChange = {
                 searchText.value = it
+                when (optionSelected) {
+                    characters -> {
+                        val newCharacters = viewModel?.searchCharactersByName(it)
+                        allCharacters?.clear()
+                        newCharacters?.let {
+                            allCharacters?.addAll(it)
+                        }
+                    }
+
+                    planets -> {
+                        val newCharacters = viewModel?.searchPlanetsByName(it)
+                        allPlanets?.clear()
+                        newCharacters?.let {
+                            allPlanets?.addAll(it)
+                        }
+                    }
+
+                    ships -> {
+                        val newCharacters = viewModel?.searchShipsByName(it)
+                        allShips?.clear()
+                        newCharacters?.let {
+                            allShips?.addAll(it)
+                        }
+                    }
+                }
             },
             shape = RoundedCornerShape(percent = 36),
             singleLine = true,

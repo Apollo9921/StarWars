@@ -9,7 +9,6 @@ import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
 import com.example.starwars.screens.option
 import com.example.starwars.utils.network.ConnectivityObserver
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -204,5 +203,26 @@ class SearchViewModel(
                 }
             }
         }
+    }
+
+    fun searchCharactersByName(name: String): List<CharactersItem>? {
+        allCharacters?.let { characters ->
+            return characters.filter { it.name.contains(name, ignoreCase = true) }
+        }
+        return null
+    }
+
+    fun searchPlanetsByName(name: String): List<PlanetsItem>? {
+        allPlanets?.let { planets ->
+            return planets.filter { it.name.contains(name, ignoreCase = true) }
+        }
+        return null
+    }
+
+    fun searchShipsByName(name: String): List<ShipsItem>? {
+        allVehicles?.let { vehicles ->
+            return vehicles.filter { it.name.contains(name, ignoreCase = true) }
+        }
+        return null
     }
 }
