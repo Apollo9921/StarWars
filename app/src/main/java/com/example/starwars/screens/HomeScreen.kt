@@ -27,7 +27,7 @@ import androidx.navigation.NavHostController
 import com.example.starwars.R
 import com.example.starwars.components.TopBarWithImage
 import com.example.starwars.core.customFonts
-import com.example.starwars.utils.ScreenSizeUtils
+import com.example.starwars.utils.size.ScreenSizeUtils
 
 @Composable
 fun HomeScreen(navController: NavHostController) {

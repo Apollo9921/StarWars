@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.starwars.R
 import com.example.starwars.core.customFonts
-import com.example.starwars.utils.ScreenSizeUtils
+import com.example.starwars.utils.size.ScreenSizeUtils
 
 @Composable
 fun BottomSheetContent() {

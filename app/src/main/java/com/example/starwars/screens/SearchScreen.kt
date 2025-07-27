@@ -59,7 +59,7 @@ import com.example.starwars.components.TopBarWithImage
 import com.example.starwars.core.SearchBar
 import com.example.starwars.core.SearchBarText
 import com.example.starwars.core.customFonts
-import com.example.starwars.utils.ScreenSizeUtils
+import com.example.starwars.utils.size.ScreenSizeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.starwars.R
-import com.example.starwars.utils.ScreenSizeUtils
+import com.example.starwars.utils.size.ScreenSizeUtils
 
 @Composable
 fun TopBarWithImage(isBackEnabled: Boolean = true, onBackClick: () -> Unit = {}, imageResId: Int) {

@@ -1,4 +1,4 @@
-package com.example.starwars.utils
+package com.example.starwars.utils.size
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
