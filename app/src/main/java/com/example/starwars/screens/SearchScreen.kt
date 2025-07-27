@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,22 +15,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,13 +53,17 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import com.example.starwars.R
+import com.example.starwars.components.BottomSheetContent
 import com.example.starwars.components.ListResults
 import com.example.starwars.components.TopBarWithImage
 import com.example.starwars.core.SearchBar
 import com.example.starwars.core.SearchBarText
 import com.example.starwars.core.customFonts
 import com.example.starwars.utils.ScreenSizeUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(navController: NavHostController, optionSelected: String) {
     val context = LocalContext.current
@@ -70,40 +84,80 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
         }
     }
 
-    Scaffold(
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
+    val scope = rememberCoroutineScope()
+    val screenHeight = ScreenSizeUtils.getScreenHeightDp()
+    val sheetMaxHeight = screenHeight / 1.5f
+
+    BottomSheetScaffold(
         modifier = Modifier.fillMaxSize(),
+        scaffoldState = scaffoldState,
         containerColor = Color.Transparent,
-        topBar = {
-            Column {
-                TopBarWithImage(
-                    isBackEnabled = true,
-                    onBackClick = { navController.navigateUp() },
-                    imageResId = R.drawable.logo
-                )
-                Spacer(modifier = Modifier.padding(10.dp))
-                SearchBar(optionSelected)
-            }
+        sheetContent = {
+            BottomSheetContent()
         },
-        content = {
+        sheetPeekHeight = sheetMaxHeight,
+        sheetContainerColor = MaterialTheme.colorScheme.secondary,
+        sheetDragHandle = {
+            val dragHandleSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 60).dp
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.primary,
+                thickness = 4.dp,
+                modifier = Modifier.width(dragHandleSize)
+            )
+        }
+    ) {
+        if (scaffoldState.bottomSheetState.isVisible && scaffoldState.bottomSheetState.currentValue != SheetValue.Hidden) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = it.calculateTopPadding())
-            ) {
-                ListResults(optionSelected)
-            }
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+            )
         }
-    )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = it.calculateTopPadding())
+        ) {
+            TopBarWithImage(
+                isBackEnabled = true,
+                onBackClick = { navController.navigateUp() },
+                imageResId = R.drawable.logo
+            )
+            Spacer(modifier = Modifier.padding(10.dp))
+            SearchBar(optionSelected, scope, scaffoldState)
+            ListResults(optionSelected)
+        }
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SearchBar(optionSelected: String) {
+private fun SearchBar(
+    optionSelected: String,
+    scope: CoroutineScope,
+    scaffoldState: BottomSheetScaffoldState
+) {
     val orientation = LocalConfiguration.current.orientation
     val isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT
 
-    val title = if (isPortrait) { ScreenSizeUtils.calculateCustomWidth(baseSize = 32).sp } else { ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp }
+    val title = if (isPortrait) {
+        ScreenSizeUtils.calculateCustomWidth(baseSize = 32).sp
+    } else {
+        ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp
+    }
     val searchText = remember { mutableStateOf("") }
-    val searchBarWidth =  ScreenSizeUtils.calculateCustomWidth(baseSize = 320).dp
+    val searchBarWidth = ScreenSizeUtils.calculateCustomWidth(baseSize = 320).dp
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -153,13 +207,18 @@ private fun SearchBar(optionSelected: String) {
             modifier = Modifier.width(searchBarWidth),
         )
         Spacer(modifier = Modifier.padding(10.dp))
-        FilterSortRow()
+        FilterSortRow(scope, scaffoldState, optionSelected)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FilterSortRow() {
-    val imageSize =  ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
+private fun FilterSortRow(
+    scope: CoroutineScope,
+    scaffoldState: BottomSheetScaffoldState,
+    optionSelected: String
+) {
+    val imageSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
     val buttonOptionsText = ScreenSizeUtils.calculateCustomWidth(baseSize = 13).sp
     val arrowSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 30).dp
     Row(
@@ -167,11 +226,17 @@ private fun FilterSortRow() {
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(R.drawable.sliders),
-            contentDescription = "Icon 1",
-            modifier = Modifier.size(imageSize)
-        )
+        if (optionSelected == "Characters") {
+            Image(
+                painter = painterResource(R.drawable.sliders),
+                contentDescription = "Icon 1",
+                modifier = Modifier
+                    .size(imageSize)
+                    .clickable {
+                        scope.launch { scaffoldState.bottomSheetState.partialExpand() }
+                    }
+            )
+        }
         Spacer(modifier = Modifier.padding(25.dp))
         Button(
             onClick = { /* ... */ },
@@ -181,7 +246,9 @@ private fun FilterSortRow() {
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .height(arrowSize)
         ) {
             Text(
                 text = "NAME",
@@ -200,7 +267,9 @@ private fun FilterSortRow() {
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .height(arrowSize)
         ) {
             Text(
                 text = "YEAR",
@@ -219,7 +288,9 @@ private fun FilterSortRow() {
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
-            modifier = Modifier.weight(0.5f)
+            modifier = Modifier
+                .weight(0.5f)
+                .height(arrowSize)
         ) {
             Icon(
                 painter = painterResource(R.drawable.arrow_up),
@@ -236,7 +307,9 @@ private fun FilterSortRow() {
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
-            modifier = Modifier.weight(0.5f)
+            modifier = Modifier
+                .weight(0.5f)
+                .height(arrowSize)
         ) {
             Image(
                 painter = painterResource(R.drawable.arrow_down),

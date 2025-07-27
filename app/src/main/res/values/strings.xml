@@ -5,4 +5,8 @@
     <string name="characters">Characters</string>
     <string name="ships">Ships</string>
     <string name="planets">Planets</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_specie_option">Specie</string>
+    <string name="filter_gender_option">Gender</string>
+    <string name="filter_confirm_changes">Search</string>
 </resources>
