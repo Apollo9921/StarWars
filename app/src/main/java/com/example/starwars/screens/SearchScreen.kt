@@ -1,8 +1,7 @@
 package com.example.starwars.screens
 
-import android.app.Activity
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +35,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -49,15 +48,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import com.example.starwars.R
 import com.example.starwars.components.BottomSheetContent
@@ -70,34 +65,48 @@ import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
 import com.example.starwars.networking.viewModel.SearchViewModel
+import com.example.starwars.utils.lockOrientation.LockOrientation
 import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.size.ScreenSizeUtils
-import com.example.starwars.utils.sort.Sorting
+import com.example.starwars.utils.sort.Sorting.sorByYear
+import com.example.starwars.utils.sort.Sorting.sortAscendant
+import com.example.starwars.utils.sort.Sorting.sortByName
+import com.example.starwars.utils.sort.Sorting.sortCharacterWhenSearch
+import com.example.starwars.utils.sort.Sorting.sortCharactersNameAscendant
+import com.example.starwars.utils.sort.Sorting.sortDescendant
+import com.example.starwars.utils.sort.Sorting.sortPlanetsNameAscendant
+import com.example.starwars.utils.sort.Sorting.sortPlanetsWhenSearch
+import com.example.starwars.utils.sort.Sorting.sortShipsNameAscendant
+import com.example.starwars.utils.sort.Sorting.sortShipsWhenSearch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 private var viewModel: SearchViewModel? = null
-private var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
-private var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
-private var allShips: SnapshotStateList<ShipsItem>? = mutableStateListOf<ShipsItem>()
-private var sortOptionNameSelected = mutableIntStateOf(0)
+private var sortOptionNameYearSelected = mutableIntStateOf(0)
 private var sortOptionSelected = mutableIntStateOf(0)
+var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
+var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
+var allShips: SnapshotStateList<ShipsItem>? = mutableStateListOf<ShipsItem>()
 var option = mutableStateOf("")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(navController: NavHostController, optionSelected: String) {
     option.value = optionSelected
+    val character = stringResource(R.string.characters)
+    val planet = stringResource(R.string.planets)
+    val ship = stringResource(R.string.ships)
+
     viewModel = koinViewModel<SearchViewModel>()
     var isConnected = remember { mutableStateOf(false) }
     val networkStatus = viewModel?.networkStatus?.collectAsState()
     if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
         isConnected.value = true
         when (option.value) {
-            stringResource(R.string.characters) -> viewModel?.getCharacters()
-            stringResource(R.string.ships) -> viewModel?.getVehicles()
-            stringResource(R.string.planets) -> viewModel?.getPlanets()
+            character -> viewModel?.getCharacters()
+            planet -> viewModel?.getPlanets()
+            ship -> viewModel?.getVehicles()
         }
     }
 
@@ -110,23 +119,8 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
     allPlanets = viewModel?.allPlanets?.toMutableStateList()
     allShips = viewModel?.allVehicles?.toMutableStateList()
 
-    val context = LocalContext.current
-    val activity = context as? Activity
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
-    }
+    BackStack(navController)
+    LockOrientation()
 
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -175,7 +169,12 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
         ) {
             TopBarWithImage(
                 isBackEnabled = true,
-                onBackClick = { navController.navigateUp() },
+                onBackClick = {
+                    option.value = ""
+                    sortOptionNameYearSelected.intValue = 0
+                    sortOptionSelected.intValue = 0
+                    navController.navigateUp()
+                },
                 imageResId = R.drawable.logo
             )
             Spacer(modifier = Modifier.padding(10.dp))
@@ -209,6 +208,25 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
 
                 isSuccess == true -> {
                     ListResults(allCharacters, allPlanets, allShips)
+                    var sortFormatDefault = remember { mutableIntStateOf(0) }
+                    LaunchedEffect(sortFormatDefault.intValue) {
+                        if (sortFormatDefault.intValue == 0) {
+                            sortFormatDefault.intValue++
+                            when (optionSelected) {
+                                character -> {
+                                    sortCharactersNameAscendant()
+                                }
+
+                                planet -> {
+                                    sortPlanetsNameAscendant()
+                                }
+
+                                ship -> {
+                                    sortShipsNameAscendant()
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -262,11 +280,7 @@ private fun SearchBar(
                         newCharacters?.let {
                             allCharacters?.addAll(it)
                         }
-                        if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 0) {
-                            sortCharactersNameAscendant()
-                        } else if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 1) {
-                            sortCharactersNameDescendant()
-                        }
+                        sortCharacterWhenSearch(sortOptionNameYearSelected.intValue, sortOptionSelected.intValue)
                     }
 
                     planets -> {
@@ -275,11 +289,7 @@ private fun SearchBar(
                         newCharacters?.let {
                             allPlanets?.addAll(it)
                         }
-                        if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 0) {
-                            sortPlanetsNameAscendant()
-                        } else if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 1) {
-                            sortPlanetsNameDescendant()
-                        }
+                        sortPlanetsWhenSearch(sortOptionNameYearSelected.intValue, sortOptionSelected.intValue)
                     }
 
                     ships -> {
@@ -288,11 +298,7 @@ private fun SearchBar(
                         newCharacters?.let {
                             allShips?.addAll(it)
                         }
-                        if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 0) {
-                            sortShipsNameAscendant()
-                        } else if (sortOptionNameSelected.intValue == 0 && sortOptionSelected.intValue == 1) {
-                            sortShipsNameDescendant()
-                        }
+                        sortShipsWhenSearch(sortOptionNameYearSelected.intValue, sortOptionSelected.intValue)
                     }
                 }
             },
@@ -361,11 +367,14 @@ private fun FilterSortRow(
         }
         Spacer(modifier = Modifier.padding(25.dp))
         Button(
-            onClick = { sortOptionNameSelected.intValue = 0 },
+            onClick = {
+                sortOptionNameYearSelected.intValue = 0
+                sortByName(optionSelected, character, planet, ship, sortOptionSelected.intValue)
+            },
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
             shape = RoundedCornerShape(percent = 50),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (sortOptionNameSelected.intValue == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                containerColor = if (sortOptionNameYearSelected.intValue == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
             modifier = Modifier
@@ -380,40 +389,37 @@ private fun FilterSortRow(
                 textAlign = TextAlign.Center
             )
         }
-        Spacer(modifier = Modifier.padding(4.dp))
-        Button(
-            onClick = { sortOptionNameSelected.intValue = 1 },
-            shape = RoundedCornerShape(percent = 50),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (sortOptionNameSelected.intValue == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
-                contentColor = MaterialTheme.colorScheme.secondary
-            ),
-            modifier = Modifier
-                .weight(1f)
-                .height(arrowSize)
-        ) {
-            Text(
-                text = stringResource(R.string.sort_year),
-                maxLines = 1,
-                fontFamily = customFonts,
-                fontSize = buttonOptionsText,
-                textAlign = TextAlign.Center
-            )
+        if (optionSelected == stringResource(R.string.characters)) {
+            Spacer(modifier = Modifier.padding(4.dp))
+            Button(
+                onClick = {
+                    sortOptionNameYearSelected.intValue = 1
+                    sorByYear(sortOptionSelected.intValue)
+                },
+                shape = RoundedCornerShape(percent = 50),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (sortOptionNameYearSelected.intValue == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.secondary
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(arrowSize)
+            ) {
+                Text(
+                    text = stringResource(R.string.sort_year),
+                    maxLines = 1,
+                    fontFamily = customFonts,
+                    fontSize = buttonOptionsText,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
         Spacer(modifier = Modifier.padding(4.dp))
         Button(
             onClick = {
                 sortOptionSelected.intValue = 0
-                if (sortOptionNameSelected.intValue == 0) {
-                    if (optionSelected == character) {
-                        sortCharactersNameAscendant()
-                    } else if (optionSelected == planet) {
-                        sortPlanetsNameAscendant()
-                    } else if (optionSelected == ship) {
-                        sortShipsNameAscendant()
-                    }
-                }
+                sortAscendant(optionSelected, character, planet, ship, sortOptionNameYearSelected.intValue)
             },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
@@ -435,15 +441,7 @@ private fun FilterSortRow(
         Button(
             onClick = {
                 sortOptionSelected.intValue = 1
-                if (sortOptionNameSelected.intValue == 0) {
-                    if (optionSelected == character) {
-                        sortCharactersNameDescendant()
-                    } else if (optionSelected == planet) {
-                        sortPlanetsNameDescendant()
-                    } else if (optionSelected == ship) {
-                        sortShipsNameDescendant()
-                    }
-                }
+                sortDescendant(optionSelected, character, planet, ship, sortOptionNameYearSelected.intValue)
             },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
@@ -464,50 +462,12 @@ private fun FilterSortRow(
     }
 }
 
-private fun sortCharactersNameAscendant() {
-    val newCharacters  = Sorting.sortCharactersByNameAscendant(allCharacters)
-    allCharacters?.clear()
-    newCharacters?.let {
-        allCharacters?.addAll(it)
-    }
-}
-
-private fun sortCharactersNameDescendant() {
-    val newCharacters  = Sorting.sortCharactersByNameDescendant(allCharacters)
-    allCharacters?.clear()
-    newCharacters?.let {
-        allCharacters?.addAll(it)
-    }
-}
-
-private fun sortPlanetsNameAscendant() {
-    val newCharacters  = Sorting.sortPlanetsByNameAscendant(allPlanets)
-    allPlanets?.clear()
-    newCharacters?.let {
-        allPlanets?.addAll(it)
-    }
-}
-
-private fun sortPlanetsNameDescendant() {
-    val newCharacters  = Sorting.sortPlanetsByNameDescendant(allPlanets)
-    allPlanets?.clear()
-    newCharacters?.let {
-        allPlanets?.addAll(it)
-    }
-}
-
-private fun sortShipsNameAscendant() {
-    val newCharacters  = Sorting.sortVehiclesByNameAscendant(allShips)
-    allShips?.clear()
-    newCharacters?.let {
-        allShips?.addAll(it)
-    }
-}
-
-private fun sortShipsNameDescendant() {
-    val newCharacters  = Sorting.sortVehiclesByNameDescendant(allShips)
-    allShips?.clear()
-    newCharacters?.let {
-        allShips?.addAll(it)
+@Composable
+private fun BackStack(navController: NavHostController) {
+    BackHandler {
+        option.value = ""
+        sortOptionNameYearSelected.intValue = 0
+        sortOptionSelected.intValue = 0
+        navController.navigateUp()
     }
 }
