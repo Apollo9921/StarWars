@@ -137,7 +137,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
         scaffoldState = scaffoldState,
         containerColor = Color.Transparent,
         sheetContent = {
-            BottomSheetContent()
+            BottomSheetContent(scope, scaffoldState, viewModel)
         },
         sheetPeekHeight = sheetMaxHeight,
         sheetContainerColor = MaterialTheme.colorScheme.secondary,

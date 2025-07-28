@@ -39,6 +39,8 @@ class SearchViewModel(
     var allPlanets: List<PlanetsItem>? = null
     var allVehicles: List<ShipsItem>? = null
 
+    var filteredCharacters: List<CharactersItem> = emptyList()
+
     val networkStatus: StateFlow<ConnectivityObserver.Status> =
         connectivityObserver.observe()
             .stateIn(
@@ -206,8 +208,14 @@ class SearchViewModel(
     }
 
     fun searchCharactersByName(name: String): List<CharactersItem>? {
-        allCharacters?.let { characters ->
-            return characters.filter { it.name.contains(name, ignoreCase = true) }
+        if (filteredCharacters.isEmpty()) {
+            allCharacters?.let { characters ->
+                return characters.filter { it.name.contains(name, ignoreCase = true) }
+            }
+        } else {
+            filteredCharacters.let { characters ->
+                return characters.filter { it.name.contains(name, ignoreCase = true) }
+            }
         }
         return null
     }
