@@ -156,12 +156,12 @@ private fun CharacterDetailsScreen() {
     )
 
     val characterInfo = listOf(
-        viewModel?.allCharacters?.name ?: "",
-        "${viewModel?.allCharacters?.height} cm",
-        "${viewModel?.allCharacters?.mass} kg",
-        viewModel?.allCharacters?.gender ?: "",
-        viewModel?.allCharacters?.eye_color ?: "",
-        viewModel?.allCharacters?.hair_color ?: ""
+        viewModel?.characterDetails?.name ?: "",
+        "${viewModel?.characterDetails?.height} cm",
+        "${viewModel?.characterDetails?.mass} kg",
+        viewModel?.characterDetails?.gender ?: "",
+        viewModel?.characterDetails?.eye_color ?: "",
+        viewModel?.characterDetails?.hair_color ?: ""
     )
 
     Text(
@@ -217,10 +217,10 @@ private fun ShipDetailsScreen() {
     )
 
     val shipInfo = listOf(
-        viewModel?.allVehicles?.name ?: "",
-        viewModel?.allVehicles?.model ?: "",
-        viewModel?.allVehicles?.manufacturer ?: "",
-        viewModel?.allVehicles?.passengers ?: "",
+        viewModel?.vehicleDetails?.name ?: "",
+        viewModel?.vehicleDetails?.model ?: "",
+        viewModel?.vehicleDetails?.manufacturer ?: "",
+        viewModel?.vehicleDetails?.passengers ?: "",
     )
 
     Text(
@@ -276,10 +276,10 @@ private fun PlanetDetailsScreen() {
     )
 
     val planetInfo = listOf(
-        viewModel?.allPlanets?.name ?: "",
-        viewModel?.allPlanets?.population ?: "",
-        viewModel?.allPlanets?.terrain ?: "",
-        viewModel?.allPlanets?.climate ?: "",
+        viewModel?.planetDetails?.name ?: "",
+        viewModel?.planetDetails?.population ?: "",
+        viewModel?.planetDetails?.terrain ?: "",
+        viewModel?.planetDetails?.climate ?: "",
     )
 
     Text(
@@ -335,19 +335,19 @@ private fun checkIfIsConnected(
         isConnected.value = true
         when (optionSelected) {
             character -> {
-                if (viewModel?.allCharacters == null) {
+                if (viewModel?.characterDetails == null) {
                     viewModel?.getCharacter(itemId.toInt())
                 }
             }
 
             planet -> {
-                if (viewModel?.allPlanets == null) {
+                if (viewModel?.planetDetails == null) {
                     viewModel?.getPlanet(itemId.toInt())
                 }
             }
 
             ship -> {
-                if (viewModel?.allVehicles == null) {
+                if (viewModel?.vehicleDetails == null) {
                     viewModel?.getShip(itemId.toInt())
                 }
             }

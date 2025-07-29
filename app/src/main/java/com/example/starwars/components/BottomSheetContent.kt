@@ -45,6 +45,17 @@ import kotlinx.coroutines.launch
 private var listSpeciesSelected: SnapshotStateList<String> = emptyList<String>().toMutableStateList()
 private var listGenderSelected: SnapshotStateList<String> = emptyList<String>().toMutableStateList()
 
+/**
+ * Composable function that defines the content for a bottom sheet used for filtering characters.
+ *
+ * It allows users to select species and gender filters and then apply these filters
+ * to a list of characters. The results are updated in the provided [SearchViewModel]
+ * and a global `allCharacters` list.
+ *
+ * @param scope A [CoroutineScope] used for launching coroutines, typically for actions like hiding the bottom sheet.
+ * @param scaffoldState The [BottomSheetScaffoldState] used to control the bottom sheet (e.g., hiding it).
+ * @param viewModel The [SearchViewModel] instance that holds character data and filter state. Can be null.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetContent(
@@ -52,6 +63,7 @@ fun BottomSheetContent(
     scaffoldState: BottomSheetScaffoldState,
     viewModel: SearchViewModel?
 ) {
+    // Calculate dynamic sizes based on screen width for responsive UI.
     val filterOptionsText = ScreenSizeUtils.calculateCustomWidth(baseSize = 15).sp
     val imageSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
 
@@ -72,20 +84,21 @@ fun BottomSheetContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(25.dp)
+            .padding(25.dp) // Apply overall padding to the content.
     ) {
+        // Header section with an image and a reset button.
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.sliders),
+                painter = painterResource(id = R.drawable.sliders), // Filter icon.
                 contentDescription = "Star Wars Logo",
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(1f) // Takes available space, pushing reset text to the side.
                     .size(imageSize)
-                    .padding(start = 50.dp)
+                    .padding(start = 50.dp) // Adjust padding as needed.
             )
             Text(
                 text = stringResource(R.string.filter_reset),
@@ -95,27 +108,45 @@ fun BottomSheetContent(
                 textAlign = TextAlign.Center,
                 lineHeight = 32.sp,
                 modifier = Modifier.clickable {
+                    // Reset selected filters and character lists.
                     listSpeciesSelected.clear()
                     listGenderSelected.clear()
                     viewModel?.filteredCharacters = emptyList()
+                    // Resetting global allCharacters to the original full list from ViewModel.
                     allCharacters = viewModel?.allCharacters?.toMutableStateList()
                 }
             )
         }
-        Spacer(modifier = Modifier.padding(10.dp))
+        Spacer(modifier = Modifier.padding(10.dp)) // Vertical spacing.
+
+        // Display filter options for species.
         OptionsByType(specieFilterOptions, stringResource(R.string.filter_specie_option))
-        Spacer(modifier = Modifier.padding(20.dp))
+        Spacer(modifier = Modifier.padding(20.dp)) // Vertical spacing.
+
+        // Display filter options for gender.
         OptionsByType(genderFilterOptions, stringResource(R.string.filter_gender_option))
-        Spacer(modifier = Modifier.padding(20.dp))
+        Spacer(modifier = Modifier.padding(20.dp)) // Vertical spacing.
+
+        // Button to apply the selected filters.
         SearchButton(scope, scaffoldState, viewModel)
     }
 }
 
+/**
+ * A private composable function that displays a list of filter options (e.g., species, gender)
+ * as selectable buttons within a [FlowRow].
+ *
+ * @param filterOptionsText A list of strings representing the filter options to display.
+ * @param text The title or type of the filter group (e.g., "Species", "Gender").
+ */
 @Composable
 private fun OptionsByType(filterOptionsText: List<String>, text: String) {
     val textSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 15).sp
+    // Get string resources for comparison to determine which global list to update.
     val specie = stringResource(R.string.filter_specie_option)
     val gender = stringResource(R.string.filter_gender_option)
+
+    // Title for the filter group.
     Text(
         text = text,
         color = MaterialTheme.colorScheme.primary,
@@ -124,48 +155,68 @@ private fun OptionsByType(filterOptionsText: List<String>, text: String) {
         textAlign = TextAlign.Center,
         lineHeight = 32.sp
     )
+    // FlowRow arranges items horizontally and wraps to the next line if space is insufficient.
     FlowRow(
-        maxItemsInEachRow = 6,
+        maxItemsInEachRow = 6, // Customize how many items before wrapping.
     ) {
-        filterOptionsText.forEach { txt ->
-            val isSelected = remember { mutableStateOf(false) }
+        filterOptionsText.forEach { optionText ->
+            // `isSelected` state is remembered for each button individually.
+            // However, the button's visual state is determined by checking global lists,
+            // which can lead to inconsistencies if not managed carefully.
+            // Consider deriving `isSelected` directly from the global lists for robustness.
+            val isSelected = remember {
+                mutableStateOf(listSpeciesSelected.contains(optionText) || listGenderSelected.contains(optionText))
+            }
+
             Button(
                 onClick = {
-                    isSelected.value = !isSelected.value
+                    isSelected.value = !isSelected.value // Toggle local selection state.
+                    // Update the corresponding global list based on the filter type and selection.
                     if (text == specie) {
                         if (isSelected.value) {
-                            listSpeciesSelected.add(txt)
+                            listSpeciesSelected.add(optionText)
                         } else {
-                            listSpeciesSelected.remove(txt)
+                            listSpeciesSelected.remove(optionText)
                         }
                     } else if (text == gender) {
                         if (isSelected.value) {
-                            listGenderSelected.add(txt)
+                            listGenderSelected.add(optionText)
                         } else {
-                            listGenderSelected.remove(txt)
+                            listGenderSelected.remove(optionText)
                         }
                     }
                 },
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(percent = 50),
+                shape = RoundedCornerShape(percent = 50), // Circular buttons.
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (listSpeciesSelected.contains(txt) || listGenderSelected.contains(txt)) Primary else Tertiary,
+                    // Button color changes based on whether the option is selected in the global lists.
+                    containerColor = if (listSpeciesSelected.contains(optionText) || listGenderSelected.contains(optionText)) Primary else Tertiary,
                     contentColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
                 Text(
-                    text = txt,
+                    text = optionText,
                     maxLines = 1,
                     fontFamily = customFonts,
                     fontSize = textSize,
                     textAlign = TextAlign.Center
                 )
             }
-            Spacer(modifier = Modifier.padding(4.dp))
+            Spacer(modifier = Modifier.padding(4.dp)) // Spacing between buttons.
         }
     }
 }
 
+/**
+ * A private composable function for the "Search" or "Apply Filters" button.
+ *
+ * When clicked, it filters the characters based on the selected species and gender,
+ * updates the ViewModel and a global character list, and then hides the bottom sheet.
+ *
+ * @param scope The [CoroutineScope] to launch the action of hiding the bottom sheet.
+ * @param scaffoldState The [BottomSheetScaffoldState] to control the bottom sheet.
+ * @param viewModel The [SearchViewModel] to update with filtered results. Can be null.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchButton(
@@ -176,31 +227,39 @@ private fun SearchButton(
     val textSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp
     Button(
         onClick = {
-            val filteredCharacters =
-                filterCharacters(listSpeciesSelected, listGenderSelected, viewModel!!)
+            // Ensure viewModel is not null before proceeding, as filterCharacters requires it.
+            viewModel?.let { vm ->
+                val filteredCharacters =
+                    filterCharacters(listSpeciesSelected, listGenderSelected, vm)
 
-            allCharacters?.clear()
-            filteredCharacters.let {
-                it?.let { elements -> allCharacters?.addAll(elements) }
+                // Update the global allCharacters list.
+                // Consider making allCharacters a SnapshotStateList directly if it's intended
+                // to be observed by Compose for UI updates.
+                allCharacters?.clear()
+                filteredCharacters?.let { elements -> allCharacters?.addAll(elements) }
+
+                // Update the ViewModel's list of filtered characters.
+                vm.filteredCharacters = filteredCharacters ?: emptyList()
+
+                // Redundant check, already handled by `?: emptyList()` above.
+                // if(filteredCharacters.isNullOrEmpty()){
+                //     vm.filteredCharacters = emptyList()
+                // }
+
+                // TODO: Implement sorting logic after filtering if needed.
+                // "when filtering also sorting to the corresponding option is selected"
             }
 
-            viewModel.filteredCharacters = filteredCharacters ?: emptyList()
-
-            if(filteredCharacters.isNullOrEmpty()){
-                viewModel.filteredCharacters = emptyList()
-            }
-
-            //TODO when filtering also sorting to the corresponding option is selected
-
+            // Hide the bottom sheet after applying filters.
             scope.launch { scaffoldState.bottomSheetState.hide() }
         },
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(percent = 50),
+        shape = RoundedCornerShape(percent = 50), // Circular button.
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.secondary
         ),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth() // Button takes the full width.
     ) {
         Text(
             text = stringResource(R.string.filter_confirm_changes),
