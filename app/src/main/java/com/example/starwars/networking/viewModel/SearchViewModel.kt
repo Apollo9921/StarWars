@@ -52,9 +52,21 @@ class SearchViewModel(
     init {
         viewModelScope.launch {
             when (option.value) {
-                "Characters" -> getCharacters()
-                "Planets" -> getPlanets()
-                "Ships" -> getVehicles()
+                "Characters" -> {
+                    if (com.example.starwars.screens.allCharacters.isNullOrEmpty()) {
+                        getCharacters()
+                    }
+                }
+                "Planets" -> {
+                    if (com.example.starwars.screens.allPlanets.isNullOrEmpty()) {
+                        getPlanets()
+                    }
+                }
+                "Ships" -> {
+                    if (com.example.starwars.screens.allShips.isNullOrEmpty()) {
+                        getVehicles()
+                    }
+                }
             }
         }
     }

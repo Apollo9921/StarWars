@@ -36,6 +36,8 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -101,23 +103,28 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
     viewModel = koinViewModel<SearchViewModel>()
     var isConnected = remember { mutableStateOf(false) }
     val networkStatus = viewModel?.networkStatus?.collectAsState()
-    if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
-        isConnected.value = true
-        when (option.value) {
-            character -> viewModel?.getCharacters()
-            planet -> viewModel?.getPlanets()
-            ship -> viewModel?.getVehicles()
-        }
-    }
+    checkIfDataIsLoaded(networkStatus, isConnected, optionSelected, character, planet, ship)
 
     val isLoading = viewModel?.isLoading?.value
     var isSuccess = viewModel?.isSuccess?.value
     val isError = viewModel?.isError?.value
     val errorMessage = viewModel?.errorMessage?.value
 
-    allCharacters = viewModel?.allCharacters?.toMutableStateList()
-    allPlanets = viewModel?.allPlanets?.toMutableStateList()
-    allShips = viewModel?.allVehicles?.toMutableStateList()
+    if (allCharacters.isNullOrEmpty()) {
+        allCharacters = viewModel?.allCharacters?.toMutableStateList()
+    } else {
+        viewModel?.isSuccess?.value = true
+    }
+    if (allPlanets.isNullOrEmpty()) {
+        allPlanets = viewModel?.allPlanets?.toMutableStateList()
+    } else {
+        viewModel?.isSuccess?.value = true
+    }
+    if (allShips.isNullOrEmpty()) {
+        allShips = viewModel?.allVehicles?.toMutableStateList()
+    } else {
+        viewModel?.isSuccess?.value = true
+    }
 
     BackStack(navController)
     LockOrientation()
@@ -173,6 +180,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                     option.value = ""
                     sortOptionNameYearSelected.intValue = 0
                     sortOptionSelected.intValue = 0
+                    viewModel?.filteredCharacters = emptyList()
                     navController.navigateUp()
                 },
                 imageResId = R.drawable.logo
@@ -207,26 +215,60 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                 }
 
                 isSuccess == true -> {
-                    ListResults(allCharacters, allPlanets, allShips)
-                    var sortFormatDefault = remember { mutableIntStateOf(0) }
-                    LaunchedEffect(sortFormatDefault.intValue) {
-                        if (sortFormatDefault.intValue == 0) {
-                            sortFormatDefault.intValue++
-                            when (optionSelected) {
-                                character -> {
-                                    sortCharactersNameAscendant()
-                                }
+                    ListResults(allCharacters, allPlanets, allShips, optionSelected)
+                    SortResultByDefault(character, planet, ship, optionSelected)
+                }
+            }
+        }
+    }
+}
 
-                                planet -> {
-                                    sortPlanetsNameAscendant()
-                                }
+fun checkIfDataIsLoaded(
+    networkStatus: State<ConnectivityObserver.Status>?,
+    isConnected: MutableState<Boolean>,
+    optionSelected: String,
+    character: String,
+    planet: String,
+    ship: String
+) {
+    when {
+        optionSelected == character && allCharacters.isNullOrEmpty() || optionSelected == planet && allPlanets.isNullOrEmpty() || optionSelected == ship && allShips.isNullOrEmpty() -> {
+            if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
+                isConnected.value = true
+                when (option.value) {
+                    character -> { viewModel?.getCharacters() }
 
-                                ship -> {
-                                    sortShipsNameAscendant()
-                                }
-                            }
-                        }
-                    }
+                    planet -> { viewModel?.getPlanets() }
+
+                    ship -> { viewModel?.getVehicles() }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SortResultByDefault(
+    character: String,
+    planet: String,
+    ship: String,
+    optionSelected: String
+) {
+    var sortFormatDefault = remember { mutableIntStateOf(0) }
+    LaunchedEffect(sortFormatDefault.intValue) {
+        if (sortFormatDefault.intValue == 0) {
+            sortFormatDefault.intValue++
+            when (optionSelected) {
+                character -> {
+                    sortCharactersNameAscendant()
+                }
+
+                planet -> {
+                    sortPlanetsNameAscendant()
+                }
+
+                ship -> {
+                    sortShipsNameAscendant()
                 }
             }
         }
@@ -273,34 +315,7 @@ private fun SearchBar(
             value = searchText.value,
             onValueChange = {
                 searchText.value = it
-                when (optionSelected) {
-                    characters -> {
-                        val newCharacters = viewModel?.searchCharactersByName(it)
-                        allCharacters?.clear()
-                        newCharacters?.let {
-                            allCharacters?.addAll(it)
-                        }
-                        sortCharacterWhenSearch(sortOptionNameYearSelected.intValue, sortOptionSelected.intValue)
-                    }
-
-                    planets -> {
-                        val newCharacters = viewModel?.searchPlanetsByName(it)
-                        allPlanets?.clear()
-                        newCharacters?.let {
-                            allPlanets?.addAll(it)
-                        }
-                        sortPlanetsWhenSearch(sortOptionNameYearSelected.intValue, sortOptionSelected.intValue)
-                    }
-
-                    ships -> {
-                        val newCharacters = viewModel?.searchShipsByName(it)
-                        allShips?.clear()
-                        newCharacters?.let {
-                            allShips?.addAll(it)
-                        }
-                        sortShipsWhenSearch(sortOptionNameYearSelected.intValue, sortOptionSelected.intValue)
-                    }
-                }
+                onSearchQuery(it, characters, planets, ships, optionSelected)
             },
             shape = RoundedCornerShape(percent = 36),
             singleLine = true,
@@ -419,7 +434,13 @@ private fun FilterSortRow(
         Button(
             onClick = {
                 sortOptionSelected.intValue = 0
-                sortAscendant(optionSelected, character, planet, ship, sortOptionNameYearSelected.intValue)
+                sortAscendant(
+                    optionSelected,
+                    character,
+                    planet,
+                    ship,
+                    sortOptionNameYearSelected.intValue
+                )
             },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
@@ -441,7 +462,13 @@ private fun FilterSortRow(
         Button(
             onClick = {
                 sortOptionSelected.intValue = 1
-                sortDescendant(optionSelected, character, planet, ship, sortOptionNameYearSelected.intValue)
+                sortDescendant(
+                    optionSelected,
+                    character,
+                    planet,
+                    ship,
+                    sortOptionNameYearSelected.intValue
+                )
             },
             shape = RoundedCornerShape(percent = 50),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
@@ -468,6 +495,53 @@ private fun BackStack(navController: NavHostController) {
         option.value = ""
         sortOptionNameYearSelected.intValue = 0
         sortOptionSelected.intValue = 0
+        viewModel?.filteredCharacters = emptyList()
         navController.navigateUp()
+    }
+}
+
+private fun onSearchQuery(
+    it: String,
+    characters: String,
+    planets: String,
+    ships: String,
+    optionSelected: String
+) {
+    when (optionSelected) {
+        characters -> {
+            val newCharacters = viewModel?.searchCharactersByName(it)
+            allCharacters?.clear()
+            newCharacters?.let {
+                allCharacters?.addAll(it)
+            }
+            sortCharacterWhenSearch(
+                sortOptionNameYearSelected.intValue,
+                sortOptionSelected.intValue
+            )
+        }
+
+        planets -> {
+            val newCharacters = viewModel?.searchPlanetsByName(it)
+            allPlanets?.clear()
+            newCharacters?.let {
+                allPlanets?.addAll(it)
+            }
+            sortPlanetsWhenSearch(
+                sortOptionNameYearSelected.intValue,
+                sortOptionSelected.intValue
+            )
+        }
+
+        ships -> {
+            val newCharacters = viewModel?.searchShipsByName(it)
+            allShips?.clear()
+            newCharacters?.let {
+                allShips?.addAll(it)
+            }
+            sortShipsWhenSearch(
+                sortOptionNameYearSelected.intValue,
+                sortOptionSelected.intValue
+            )
+        }
     }
 }
