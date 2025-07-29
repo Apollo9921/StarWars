@@ -29,6 +29,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -81,6 +82,7 @@ import com.example.starwars.utils.sort.Sorting.sortPlanetsWhenSearch
 import com.example.starwars.utils.sort.Sorting.sortShipsNameAscendant
 import com.example.starwars.utils.sort.Sorting.sortShipsWhenSearch
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -186,7 +188,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                 imageResId = R.drawable.logo
             )
             Spacer(modifier = Modifier.padding(10.dp))
-            SearchBar(optionSelected, scope, scaffoldState)
+            SearchBar(optionSelected, scope, scaffoldState, networkStatus)
             when {
                 isLoading == true -> {
                     Box(
@@ -280,7 +282,8 @@ private fun SortResultByDefault(
 private fun SearchBar(
     optionSelected: String,
     scope: CoroutineScope,
-    scaffoldState: BottomSheetScaffoldState
+    scaffoldState: BottomSheetScaffoldState,
+    networkStatus: State<ConnectivityObserver.Status>?
 ) {
     val orientation = LocalConfiguration.current.orientation
     val isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT
@@ -292,6 +295,26 @@ private fun SearchBar(
     }
     val searchText = remember { mutableStateOf("") }
     val searchBarWidth = ScreenSizeUtils.calculateCustomWidth(baseSize = 320).dp
+
+    var notInternet = remember { mutableStateOf(false) }
+
+    if (notInternet.value) {
+        Snackbar(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.secondary,
+        ) {
+            Text(
+                text = "No internet connection",
+                color = MaterialTheme.colorScheme.secondary,
+                fontFamily = customFonts,
+                fontSize = 16.sp,
+            )
+        }
+        LaunchedEffect(notInternet.value) {
+            delay(2000)
+            notInternet.value = false
+        }
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -314,8 +337,12 @@ private fun SearchBar(
         TextField(
             value = searchText.value,
             onValueChange = {
-                searchText.value = it
-                onSearchQuery(it, characters, planets, ships, optionSelected)
+                if (networkStatus?.value == ConnectivityObserver.Status.Available) {
+                    searchText.value = it
+                    onSearchQuery(it, characters, planets, ships, optionSelected)
+                } else {
+                    notInternet.value = true
+                }
             },
             shape = RoundedCornerShape(percent = 36),
             singleLine = true,
