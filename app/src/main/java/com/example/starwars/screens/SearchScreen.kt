@@ -217,7 +217,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                 }
 
                 isSuccess == true -> {
-                    ListResults(allCharacters, allPlanets, allShips, optionSelected)
+                    ListResults(allCharacters, allPlanets, allShips, optionSelected, navController)
                     SortResultByDefault(character, planet, ship, optionSelected)
                 }
             }
