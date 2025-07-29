@@ -20,4 +20,16 @@ class StarWarsRepositoryImpl(
     override suspend fun getAllStarships(): Response<List<ShipsItem>> {
         return service.getAllStarships()
     }
+
+    override suspend fun getCharacterById(id: Int): Response<CharactersItem> {
+        return service.getCharacterById(id)
+    }
+
+    override suspend fun getPlanetById(id: Int): Response<PlanetsItem> {
+        return service.getPlanetById(id)
+    }
+
+    override suspend fun getStarshipById(id: Int): Response<ShipsItem> {
+        return service.getStarshipById(id)
+    }
 }

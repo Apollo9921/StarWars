@@ -11,4 +11,21 @@
     <string name="filter_confirm_changes">Search</string>
     <string name="sort_name">Name</string>
     <string name="sort_year">Year</string>
+    <string name="details_character_title">Personal Information</string>
+    <string name="details_planet_title">Planet Information</string>
+    <string name="details_ship_title">Ship Information</string>
+    <string name="details_character_name">Name</string>
+    <string name="details_character_height">Height</string>
+    <string name="details_character_mass">Mass</string>
+    <string name="details_character_gender">Gender</string>
+    <string name="details_character_eye_color">Eye Color</string>
+    <string name="details_character_hair_color">Hair Color</string>
+    <string name="details_ship_name">Name</string>
+    <string name="details_ship_model">Model</string>
+    <string name="details_ship_manufacturer">Manufacturer</string>
+    <string name="details_ship_passengers">Passengers</string>
+    <string name="details_planet_name">Name</string>
+    <string name="details_planet_population">Population</string>
+    <string name="details_planet_terrain">Terrain</string>
+    <string name="details_planet_climate">Climate</string>
 </resources>

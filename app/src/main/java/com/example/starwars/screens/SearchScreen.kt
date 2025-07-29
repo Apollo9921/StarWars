@@ -225,7 +225,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
     }
 }
 
-fun checkIfDataIsLoaded(
+private fun checkIfDataIsLoaded(
     networkStatus: State<ConnectivityObserver.Status>?,
     isConnected: MutableState<Boolean>,
     optionSelected: String,

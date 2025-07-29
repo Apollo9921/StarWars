@@ -9,4 +9,7 @@ interface StarWarsRepository {
     suspend fun getAllCharacters(): Response<List<CharactersItem>>
     suspend fun getAllPlanets(): Response<List<PlanetsItem>>
     suspend fun getAllStarships(): Response<List<ShipsItem>>
+    suspend fun getCharacterById(id: Int): Response<CharactersItem>
+    suspend fun getPlanetById(id: Int): Response<PlanetsItem>
+    suspend fun getStarshipById(id: Int): Response<ShipsItem>
 }

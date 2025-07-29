@@ -1,6 +1,7 @@
 package com.example.starwars.koin
 
 import com.example.starwars.networking.instance.Instance
+import com.example.starwars.networking.viewModel.DetailsViewModel
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.network.NetworkConnectivityObserver
@@ -25,4 +26,7 @@ val appModule = module {
         SearchViewModel(get(), get())
     }
 
+    viewModel {
+        DetailsViewModel(get(), get())
+    }
 }
