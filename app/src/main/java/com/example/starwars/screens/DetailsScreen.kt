@@ -352,5 +352,8 @@ private fun checkIfIsConnected(
                 }
             }
         }
+    } else if (networkStatus?.value == ConnectivityObserver.Status.Unavailable && !isConnected.value) {
+        viewModel?.isError?.value = true
+        viewModel?.errorMessage?.value = "No internet connection"
     }
 }
