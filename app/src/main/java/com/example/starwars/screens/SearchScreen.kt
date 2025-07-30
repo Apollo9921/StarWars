@@ -89,6 +89,7 @@ import org.koin.androidx.compose.koinViewModel
 private var viewModel: SearchViewModel? = null
 private var sortOptionNameYearSelected = mutableIntStateOf(0)
 private var sortOptionSelected = mutableIntStateOf(0)
+private var allCharactersSaved: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
 var allShips: SnapshotStateList<ShipsItem>? = mutableStateListOf<ShipsItem>()
@@ -114,6 +115,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
 
     if (allCharacters.isNullOrEmpty()) {
         allCharacters = viewModel?.allCharacters?.toMutableStateList()
+        allCharactersSaved = viewModel?.allCharacters?.toMutableStateList()
     } else {
         viewModel?.isSuccess?.value = true
     }
@@ -146,7 +148,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
         scaffoldState = scaffoldState,
         containerColor = Color.Transparent,
         sheetContent = {
-            BottomSheetContent(scope, scaffoldState, viewModel)
+            BottomSheetContent(scope, scaffoldState, allCharactersSaved, viewModel)
         },
         sheetPeekHeight = sheetMaxHeight,
         sheetContainerColor = MaterialTheme.colorScheme.secondary,

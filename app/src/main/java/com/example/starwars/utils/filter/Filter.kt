@@ -1,15 +1,15 @@
 package com.example.starwars.utils.filter
 
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.starwars.networking.model.characters.CharactersItem
-import com.example.starwars.networking.viewModel.SearchViewModel
 
 object Filter {
     fun filterCharacters(
         species: List<String>?,
         gender: List<String>?,
-        viewModel: SearchViewModel
+        allCharactersSaved: SnapshotStateList<CharactersItem>?
     ): List<CharactersItem>? {
-        var filteredList = viewModel.allCharacters ?: return null
+        var filteredList = allCharactersSaved ?: return null
 
         val hasSpeciesFilter = !species.isNullOrEmpty()
         val hasGenderFilter = !gender.isNullOrEmpty()

@@ -35,6 +35,7 @@ import com.example.starwars.R
 import com.example.starwars.core.Primary
 import com.example.starwars.core.Tertiary
 import com.example.starwars.core.customFonts
+import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.screens.allCharacters
 import com.example.starwars.utils.filter.Filter.filterCharacters
@@ -61,8 +62,12 @@ private var listGenderSelected: SnapshotStateList<String> = emptyList<String>().
 fun BottomSheetContent(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState,
+    allCharactersSaved: SnapshotStateList<CharactersItem>?,
     viewModel: SearchViewModel?
 ) {
+    listSpeciesSelected = emptyList<String>().toMutableStateList()
+    listGenderSelected = emptyList<String>().toMutableStateList()
+
     // Calculate dynamic sizes based on screen width for responsive UI.
     val filterOptionsText = ScreenSizeUtils.calculateCustomWidth(baseSize = 15).sp
     val imageSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
@@ -128,7 +133,7 @@ fun BottomSheetContent(
         Spacer(modifier = Modifier.padding(20.dp)) // Vertical spacing.
 
         // Button to apply the selected filters.
-        SearchButton(scope, scaffoldState, viewModel)
+        SearchButton(scope, scaffoldState, allCharactersSaved, viewModel)
     }
 }
 
@@ -161,9 +166,6 @@ private fun OptionsByType(filterOptionsText: List<String>, text: String) {
     ) {
         filterOptionsText.forEach { optionText ->
             // `isSelected` state is remembered for each button individually.
-            // However, the button's visual state is determined by checking global lists,
-            // which can lead to inconsistencies if not managed carefully.
-            // Consider deriving `isSelected` directly from the global lists for robustness.
             val isSelected = remember {
                 mutableStateOf(listSpeciesSelected.contains(optionText) || listGenderSelected.contains(optionText))
             }
@@ -222,6 +224,7 @@ private fun OptionsByType(filterOptionsText: List<String>, text: String) {
 private fun SearchButton(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState,
+    allCharactersSaved: SnapshotStateList<CharactersItem>?,
     viewModel: SearchViewModel?
 ) {
     val textSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp
@@ -230,21 +233,14 @@ private fun SearchButton(
             // Ensure viewModel is not null before proceeding, as filterCharacters requires it.
             viewModel?.let { vm ->
                 val filteredCharacters =
-                    filterCharacters(listSpeciesSelected, listGenderSelected, vm)
+                    filterCharacters(listSpeciesSelected, listGenderSelected, allCharactersSaved)
 
                 // Update the global allCharacters list.
-                // Consider making allCharacters a SnapshotStateList directly if it's intended
-                // to be observed by Compose for UI updates.
                 allCharacters?.clear()
                 filteredCharacters?.let { elements -> allCharacters?.addAll(elements) }
 
                 // Update the ViewModel's list of filtered characters.
                 vm.filteredCharacters = filteredCharacters ?: emptyList()
-
-                // Redundant check, already handled by `?: emptyList()` above.
-                // if(filteredCharacters.isNullOrEmpty()){
-                //     vm.filteredCharacters = emptyList()
-                // }
 
                 // TODO: Implement sorting logic after filtering if needed.
                 // "when filtering also sorting to the corresponding option is selected"
