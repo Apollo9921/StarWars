@@ -4,31 +4,62 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.starwars.R
 import com.example.starwars.components.TopBarWithText
 import com.example.starwars.core.customFonts
+import com.example.starwars.networking.model.characters.CharactersItem
+import com.example.starwars.networking.viewModel.CompareCharactersViewModel
+import com.example.starwars.utils.network.ConnectivityObserver
 import com.example.starwars.utils.size.ScreenSizeUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
+
+private var viewModel: CompareCharactersViewModel? = null
+private var characterDetails1: CharactersItem? = null
+private var characterDetails2: CharactersItem? = null
 
 @Composable
 fun CompareCharactersScreen(navController: NavHostController, itemId1: String?, itemId2: String?) {
+    viewModel = koinViewModel<CompareCharactersViewModel>()
+    val networkStatus = viewModel?.networkStatus?.collectAsState()
+    var isConnected = remember { mutableStateOf(false) }
+    checkIfIsConnected(networkStatus, isConnected, itemId1, itemId2)
+
+    val isLoading = viewModel?.isLoading?.value
+    var isSuccess = viewModel?.isSuccess?.value
+    val isError = viewModel?.isError?.value
+    val errorMessage = viewModel?.errorMessage?.value
+
+    characterDetails1 = viewModel?.characterDetails1
+    characterDetails2 = viewModel?.characterDetails2
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -50,100 +81,156 @@ fun CompareCharactersScreen(navController: NavHostController, itemId1: String?, 
                         bottom = 60.dp
                     )
             ) {
-                CompareCharactersContent()
+                when {
+                    isLoading == true -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+
+                    isError == true -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = errorMessage ?: "Unknown error",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontFamily = customFonts,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+
+                    isSuccess == true -> {
+                        CompareCharactersContent(characterDetails1, characterDetails2)
+                    }
+                }
+
             }
         }
     )
 }
 
 @Composable
-private fun CompareCharactersContent() {
-    val characterInfoSize = ScreenSizeUtils.calculateCustomWidth(10).sp
+private fun CompareCharactersContent(
+    characterDetails1: CharactersItem?,
+    characterDetails2: CharactersItem?
+) {
+    val characterInfoSize = ScreenSizeUtils.calculateCustomWidth(13).sp
 
-    val characterTitles = listOf(
-        stringResource(R.string.details_character_name),
-        stringResource(R.string.details_character_height),
-        stringResource(R.string.details_character_mass),
-        stringResource(R.string.details_character_gender),
-        stringResource(R.string.details_character_eye_color),
-        stringResource(R.string.details_character_hair_color)
+    val titlesAndValues1 = listOf(
+        stringResource(R.string.details_character_name) to (characterDetails1?.name ?: "N/A"),
+        stringResource(R.string.details_character_height) to (characterDetails1?.height ?: "N/A"),
+        stringResource(R.string.details_character_mass) to (characterDetails1?.mass ?: "N/A"),
+        stringResource(R.string.details_character_gender) to (characterDetails1?.gender ?: "N/A"),
+        stringResource(R.string.details_character_eye_color) to (characterDetails1?.eye_color ?: "N/A"),
+        stringResource(R.string.details_character_hair_color) to (characterDetails1?.hair_color ?: "N/A")
     )
 
-    // Replace with your actual character data
-    val characterInfo1 = listOf(
-        "Luke Skywalker", "172", "77", "male", "blue", "blond"
+    val values2 = listOf(
+        characterDetails2?.name ?: "N/A",
+        characterDetails2?.height ?: "N/A",
+        characterDetails2?.mass ?: "N/A",
+        characterDetails2?.gender ?: "N/A",
+        characterDetails2?.eye_color ?: "N/A",
+        characterDetails2?.hair_color ?: "N/A"
     )
 
-    val characterInfo2 = listOf(
-        "Darth Vader", "202", "136", "male", "yellow", "none"
-    )
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceAround // Adjust as needed
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()) // Scroll the whole comparison content if it's too long
+            .padding(horizontal = 8.dp) // Add some horizontal padding to the overall column
     ) {
-        // Character 1 Info
-        CharacterInfoColumn(
-            titles = characterTitles,
-            info = characterInfo1,
-            characterName = characterInfo1[0], // Assuming the first item is the name
-            infoTextSize = characterInfoSize
-        )
+        // Headers for Character Names
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween // Or SpaceAround
+        ) {
+            Text( // Spacer for title column
+                text = "",
+                modifier = Modifier.weight(1f) // Adjust weight as needed
+            )
+            Text(
+                text = characterDetails1?.name ?: "Character 1",
+                fontSize = (characterInfoSize.value + 4).sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontFamily = customFonts,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1.5f).padding(horizontal = 4.dp)
+            )
+            Text(
+                text = characterDetails2?.name ?: "Character 2",
+                fontSize = (characterInfoSize.value + 4).sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontFamily = customFonts,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1.5f).padding(horizontal = 4.dp)
+            )
+        }
 
-        Spacer(modifier = Modifier.width(16.dp)) // Add some space between the columns
-
-        // Character 2 Info
-        CharacterInfoColumn(
-            titles = characterTitles,
-            info = characterInfo2,
-            characterName = characterInfo2[0], // Assuming the first item is the name
-            infoTextSize = characterInfoSize
-        )
+        // Attribute rows
+        titlesAndValues1.forEachIndexed { index, (title, value1) ->
+            val value2 = values2.getOrElse(index) { "N/A" }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+                    .defaultMinSize(minHeight = (characterInfoSize.value * 2.5).dp), // Ensure a minimum height for rows
+                verticalAlignment = Alignment.CenterVertically // Center content vertically within the row
+            ) {
+                Text(
+                    text = "$title:",
+                    fontSize = characterInfoSize,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontFamily = customFonts,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.weight(1f) // Adjust weight
+                )
+                Text(
+                    text = value1,
+                    fontSize = characterInfoSize,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontFamily = customFonts,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1.5f).padding(horizontal = 4.dp) // Adjust weight
+                )
+                Text(
+                    text = value2,
+                    fontSize = characterInfoSize,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontFamily = customFonts,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1.5f).padding(horizontal = 4.dp) // Adjust weight
+                )
+            }
+        }
     }
 }
 
-@Composable
-private fun CharacterInfoColumn(
-    titles: List<String>,
-    info: List<String>,
-    characterName: String, // Added for a potential header
-    infoTextSize: TextUnit,
-    modifier: Modifier = Modifier
+private fun checkIfIsConnected(
+    networkStatus: State<ConnectivityObserver.Status>?,
+    isConnected: MutableState<Boolean>,
+    itemId1: String?,
+    itemId2: String?
 ) {
-    Column(
-        modifier = modifier.padding(8.dp),
-        horizontalAlignment = Alignment.Start // Align text to the start
-    ) {
-        // Display character name as a header for each column
-        Text(
-            text = characterName,
-            fontSize = (infoTextSize.value + 5).sp, // Slightly larger for the name
-            color = MaterialTheme.colorScheme.primary,
-            fontFamily = customFonts,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        titles.forEachIndexed { index, title ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.dp)
-            ) {
-                Text(
-                    text = "$title: ",
-                    fontSize = infoTextSize,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontFamily = customFonts,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = info.getOrElse(index) { "N/A" }, // Provide a default if info is missing
-                    fontSize = infoTextSize,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontFamily = customFonts,
-                    textAlign = TextAlign.Center,
-                )
+    if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
+        isConnected.value = true
+        CoroutineScope(Dispatchers.IO).launch {
+            if (characterDetails1 == null || characterDetails2 == null) {
+                async { viewModel?.getCharacter(itemId1?.toInt()) }
+                async { viewModel?.getCharacter(itemId2?.toInt()) }
             }
         }
+    } else if (networkStatus?.value == ConnectivityObserver.Status.Unavailable && !isConnected.value) {
+        viewModel?.isError?.value = true
+        viewModel?.errorMessage?.value = "No internet connection"
     }
 }
