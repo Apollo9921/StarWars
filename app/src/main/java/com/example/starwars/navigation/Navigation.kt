@@ -9,7 +9,7 @@ import com.example.starwars.screens.DetailsScreen
 import com.example.starwars.screens.HomeScreen
 import com.example.starwars.screens.SearchScreen
 import com.example.starwars.screens.ChooseCharacter
-import com.example.starwars.screens.CompareCharacters
+import com.example.starwars.screens.CompareCharactersScreen
 
 @Composable
 fun BasicNavigation() {
@@ -46,7 +46,7 @@ fun BasicNavigation() {
         composable(route = Screen.CompareCharacters.route) {
             val itemId1 = navController.currentBackStackEntry?.arguments?.getString("itemId1")
             val itemId2 = navController.currentBackStackEntry?.arguments?.getString("itemId2")
-            CompareCharacters(navController = navController, itemId1 = itemId1, itemId2 = itemId2)
+            CompareCharactersScreen(navController = navController, itemId1 = itemId1, itemId2 = itemId2)
         }
     }
 }
