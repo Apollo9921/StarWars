@@ -19,9 +19,9 @@ class CompareCharactersViewModel(
 ) : ViewModel() {
 
     private val _characterState =
-        MutableStateFlow<DetailsViewModel.CharacterState>(DetailsViewModel.CharacterState.Loading) // Initial state can be Loading or Idle
+        MutableStateFlow<CharacterState>(CharacterState.Loading) // Initial state can be Loading or Idle
 
-    val characterState: StateFlow<DetailsViewModel.CharacterState> = _characterState.asStateFlow()
+    val characterState: StateFlow<CharacterState> = _characterState.asStateFlow()
 
     /** Indicates if any data loading operation is currently in progress. */
     var isLoading = mutableStateOf(false)
@@ -69,28 +69,28 @@ class CompareCharactersViewModel(
 
     fun getCharacter(id: Int?) {
         viewModelScope.launch {
-            _characterState.value = DetailsViewModel.CharacterState.Loading
+            _characterState.value = CharacterState.Loading
             isLoading.value = true
             isError.value = false
             isSuccess.value = false
 
             if (networkStatus.value == ConnectivityObserver.Status.Unavailable) {
-                _characterState.value = DetailsViewModel.CharacterState.Error("No Internet Connection")
+                _characterState.value = CharacterState.Error("No Internet Connection")
                 return@launch
             }
 
             try {
                 val response = repository.getCharacterById(id ?: 1)
                 if (response.isSuccessful && response.body() != null) {
-                    _characterState.value = DetailsViewModel.CharacterState.Success(response.body()!!)
+                    _characterState.value = CharacterState.Success(response.body()!!)
                 } else {
                     _characterState.value =
-                        DetailsViewModel.CharacterState.Error(response.message().takeIf { it.isNotEmpty() }
+                        CharacterState.Error(response.message().takeIf { it.isNotEmpty() }
                             ?: "Failed to fetch character")
                 }
             } catch (e: Exception) {
                 _characterState.value =
-                    DetailsViewModel.CharacterState.Error(e.message ?: "An unknown error occurred")
+                    CharacterState.Error(e.message ?: "An unknown error occurred")
             } finally {
                 observeCharacter()
             }
@@ -102,7 +102,7 @@ class CompareCharactersViewModel(
         viewModelScope.launch {
             characterState.collect { state ->
                 when (state) {
-                    is DetailsViewModel.CharacterState.Success -> {
+                    is CharacterState.Success -> {
                         if (characterDetails1 == null) {
                             characterDetails1 = state.character
                         } else {
@@ -116,14 +116,14 @@ class CompareCharactersViewModel(
                         isError.value = false
                     }
 
-                    is DetailsViewModel.CharacterState.Error -> {
+                    is CharacterState.Error -> {
                         errorMessage.value = state.message
                         isSuccess.value = false
                         isLoading.value = false
                         isError.value = true
                     }
 
-                    is DetailsViewModel.CharacterState.Loading -> {
+                    is CharacterState.Loading -> {
                         errorMessage.value = ""
                         isSuccess.value = false
                         isLoading.value = true
