@@ -20,10 +20,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -40,11 +40,12 @@ import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.screens.allCharacters
 import com.example.starwars.utils.filter.Filter.filterCharacters
 import com.example.starwars.utils.size.ScreenSizeUtils
+import com.example.starwars.utils.sort.Sorting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private var listSpeciesSelected: SnapshotStateList<String> = emptyList<String>().toMutableStateList()
-private var listGenderSelected: SnapshotStateList<String> = emptyList<String>().toMutableStateList()
+private var listSpeciesSelected: SnapshotStateList<String> = mutableStateListOf()
+private var listGenderSelected: SnapshotStateList<String> = mutableStateListOf()
 
 /**
  * Composable function that defines the content for a bottom sheet used for filtering characters.
@@ -63,10 +64,13 @@ fun BottomSheetContent(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState,
     allCharactersSaved: SnapshotStateList<CharactersItem>?,
-    viewModel: SearchViewModel?
+    viewModel: SearchViewModel?,
+    sortOptionNameYearSelected: Int,
+    sortOptionSelected: Int
 ) {
-    listSpeciesSelected = emptyList<String>().toMutableStateList()
-    listGenderSelected = emptyList<String>().toMutableStateList()
+    //TODO remove this two lists, but only when use leaves the search screen
+    //listSpeciesSelected.removeAll(listSpeciesSelected)
+    //listGenderSelected.removeAll(listGenderSelected)
 
     // Calculate dynamic sizes based on screen width for responsive UI.
     val filterOptionsText = ScreenSizeUtils.calculateCustomWidth(baseSize = 15).sp
@@ -118,7 +122,9 @@ fun BottomSheetContent(
                     listGenderSelected.clear()
                     viewModel?.filteredCharacters = emptyList()
                     // Resetting global allCharacters to the original full list from ViewModel.
-                    allCharacters = viewModel?.allCharacters?.toMutableStateList()
+                    allCharacters = allCharactersSaved
+                    // Sorting to the corresponding option is selected
+                    Sorting.sortCharacterWhenSearch(sortOptionNameYearSelected, sortOptionSelected)
                 }
             )
         }
@@ -133,7 +139,14 @@ fun BottomSheetContent(
         Spacer(modifier = Modifier.padding(20.dp)) // Vertical spacing.
 
         // Button to apply the selected filters.
-        SearchButton(scope, scaffoldState, allCharactersSaved, viewModel)
+        SearchButton(
+            scope,
+            scaffoldState,
+            allCharactersSaved,
+            sortOptionNameYearSelected,
+            sortOptionSelected,
+            viewModel
+        )
     }
 }
 
@@ -225,6 +238,8 @@ private fun SearchButton(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState,
     allCharactersSaved: SnapshotStateList<CharactersItem>?,
+    sortOptionNameYearSelected: Int,
+    sortOptionSelected: Int,
     viewModel: SearchViewModel?
 ) {
     val textSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp
@@ -242,8 +257,8 @@ private fun SearchButton(
                 // Update the ViewModel's list of filtered characters.
                 vm.filteredCharacters = filteredCharacters ?: emptyList()
 
-                // TODO: Implement sorting logic after filtering if needed.
                 // "when filtering also sorting to the corresponding option is selected"
+                Sorting.sortCharacterWhenSearch(sortOptionNameYearSelected, sortOptionSelected)
             }
 
             // Hide the bottom sheet after applying filters.
