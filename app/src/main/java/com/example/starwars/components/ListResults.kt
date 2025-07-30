@@ -1,13 +1,18 @@
 package com.example.starwars.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -130,6 +135,83 @@ fun ListResults(
                             }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ListResultsWithCheckBox(
+    allCharacters: List<CharactersItem>?,
+    navController: NavHostController,
+    itemId: String?
+) {
+    val resultTextSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 20).sp
+
+    // Use a mutableStateMapOf to store the checked state for each item.
+    // The key could be the character's URL (assuming it's unique) or any other unique ID.
+    val checkedStates = remember { mutableStateMapOf<String, Boolean>() }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 25.dp, end = 25.dp, bottom = 60.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        items(allCharacters?.size ?: 0) { index ->
+            val characterItem = allCharacters?.getOrNull(index)
+            val characterKey = characterItem?.url ?: index.toString() // Use URL or index as a key
+            val name = characterItem?.name
+
+            // Get the current checked state for this item, defaulting to false if not present.
+            val isChecked = checkedStates[characterKey] == true
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable { // Make the whole row clickable to toggle the checkbox
+                        // Uncheck all other items
+                        checkedStates.keys.forEach { key ->
+                            if (key != characterKey) {
+                                checkedStates[key] = false
+                            }
+                        }
+                        // Toggle the current item's checked state
+                        checkedStates[characterKey] = !isChecked
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start // Adjusted for better alignment
+            ) {
+                Checkbox(
+                    checked = isChecked,
+                    onCheckedChange = { newCheckedState ->
+                        // Uncheck all other items
+                        checkedStates.keys.forEach { key ->
+                            if (key != characterKey) {
+                                checkedStates[key] = false
+                            }
+                        }
+                        // Set the current item's checked state
+                        checkedStates[characterKey] = newCheckedState
+                    },
+                    modifier = Modifier.padding(end = 16.dp) // Increased padding for better spacing
+                )
+                Text(
+                    text = name ?: "",
+                    fontFamily = customFonts,
+                    fontSize = resultTextSize,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Start, // Align text to the start
+                    modifier = Modifier
+                        .weight(1f) // Allow text to take remaining space
+                        .clickable{
+                            if (isChecked) {
+                                val urlId = characterItem?.url?.split("/")?.last()
+                                navController.navigate("compareCharacters/$itemId/$urlId")
+                            }
+                        }
+                )
             }
         }
     }

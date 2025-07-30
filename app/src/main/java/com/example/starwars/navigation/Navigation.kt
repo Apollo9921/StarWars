@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.starwars.screens.DetailsScreen
 import com.example.starwars.screens.HomeScreen
 import com.example.starwars.screens.SearchScreen
+import com.example.starwars.screens.ChooseCharacter
+import com.example.starwars.screens.CompareCharacters
 
 @Composable
 fun BasicNavigation() {
@@ -36,6 +38,15 @@ fun BasicNavigation() {
                 itemId = itemId ?: "",
                 name = name ?: ""
             )
+        }
+        composable(route = Screen.ChooseCharacter.route) {
+            val itemId = navController.currentBackStackEntry?.arguments?.getString("itemId")
+            ChooseCharacter(navController = navController, itemId = itemId)
+        }
+        composable(route = Screen.CompareCharacters.route) {
+            val itemId1 = navController.currentBackStackEntry?.arguments?.getString("itemId1")
+            val itemId2 = navController.currentBackStackEntry?.arguments?.getString("itemId2")
+            CompareCharacters(navController = navController, itemId1 = itemId1, itemId2 = itemId2)
         }
     }
 }

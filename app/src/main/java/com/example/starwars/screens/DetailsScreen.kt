@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -109,7 +112,7 @@ fun DetailsScreen(
                     }
 
                     isSuccess == true -> {
-                        DetailsScreenContent(optionSelected, itemId)
+                        DetailsScreenContent(optionSelected, itemId, navController)
                     }
                 }
             }
@@ -118,7 +121,11 @@ fun DetailsScreen(
 }
 
 @Composable
-private fun DetailsScreenContent(optionSelected: String, itemId: String) {
+private fun DetailsScreenContent(
+    optionSelected: String,
+    itemId: String,
+    navController: NavHostController
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -127,7 +134,7 @@ private fun DetailsScreenContent(optionSelected: String, itemId: String) {
     ) {
         when (optionSelected) {
             "Characters" -> {
-                CharacterDetailsScreen()
+                CharacterDetailsScreen(navController, itemId)
             }
 
             "Planets" -> {
@@ -142,9 +149,10 @@ private fun DetailsScreenContent(optionSelected: String, itemId: String) {
 }
 
 @Composable
-private fun CharacterDetailsScreen() {
+private fun CharacterDetailsScreen(navController: NavHostController, itemId: String) {
     val titleSize = ScreenSizeUtils.calculateCustomWidth(20).sp
     val characterInfoSize = ScreenSizeUtils.calculateCustomWidth(14).sp
+    val buttonText = ScreenSizeUtils.calculateCustomWidth(baseSize = 13).sp
 
     val characterTitle = listOf(
         stringResource(R.string.details_character_name),
@@ -201,6 +209,32 @@ private fun CharacterDetailsScreen() {
                 )
             }
         }
+    }
+    Spacer(modifier = Modifier.padding(20.dp))
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Button(
+            onClick = {
+                navController.navigate("chooseCharacter/$itemId")
+            },
+            shape = RoundedCornerShape(percent = 30), // Apply rounded corners to the button.
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary, // Button background color.
+                contentColor = MaterialTheme.colorScheme.secondary // Button text/icon color.
+            ),
+            modifier = Modifier.fillMaxWidth(), // Button takes the full available width.
+            content = {
+                Text(
+                    text = stringResource(R.string.details_button_text),
+                    fontFamily = customFonts,
+                    fontSize = buttonText,
+                    textAlign = TextAlign.Center
+                )
+            }
+        )
     }
 }
 

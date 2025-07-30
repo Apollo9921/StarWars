@@ -89,7 +89,7 @@ import org.koin.androidx.compose.koinViewModel
 private var viewModel: SearchViewModel? = null
 private var sortOptionNameYearSelected = mutableIntStateOf(0)
 private var sortOptionSelected = mutableIntStateOf(0)
-private var allCharactersSaved: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
+var allCharactersSaved: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
 var allShips: SnapshotStateList<ShipsItem>? = mutableStateListOf<ShipsItem>()

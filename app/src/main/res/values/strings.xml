@@ -28,4 +28,7 @@
     <string name="details_planet_population">Population</string>
     <string name="details_planet_terrain">Terrain</string>
     <string name="details_planet_climate">Climate</string>
+    <string name="details_button_text">Compare with other characters</string>
+    <string name="search_screen_title">Search</string>
+    <string name="compare_screen_title">Comparison</string>"
 </resources>
