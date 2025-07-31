@@ -8,6 +8,7 @@ import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
 import com.example.starwars.networking.model.species.SpeciesItem
+import com.example.starwars.screens.allCharactersSaved
 import com.example.starwars.screens.option
 import com.example.starwars.utils.network.ConnectivityObserver
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -127,9 +128,8 @@ class SearchViewModel(
                         allCharacters = state.characters
                         isLoading.value = false
                         isError.value = false
-                        if (allCharacters != null && allSpecies != null) {
-                            isSuccess.value = true
-                        }
+                        errorMessage.value = ""
+                        getSpecies()
                     }
 
                     is CharacterState.Error -> {
@@ -269,9 +269,8 @@ class SearchViewModel(
                         allSpecies = state.species
                         isLoading.value = false
                         isError.value = false
-                        if (allCharacters != null && allSpecies != null) {
-                            isSuccess.value = true
-                        }
+                        errorMessage.value = ""
+                        isSuccess.value = true
                     }
                 }
             }
@@ -280,7 +279,8 @@ class SearchViewModel(
 
     fun searchCharactersByName(name: String): List<CharactersItem>? {
         if (filteredCharacters.isEmpty()) {
-            allCharacters?.let { characters ->
+            val characters = if (allCharacters.isNullOrEmpty()) allCharactersSaved else allCharacters
+            characters?.let { characters ->
                 return characters.filter { it.name.contains(name, ignoreCase = true) }
             }
         } else {

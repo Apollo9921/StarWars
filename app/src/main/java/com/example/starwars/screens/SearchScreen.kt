@@ -84,7 +84,6 @@ import com.example.starwars.utils.sort.Sorting.sortShipsNameAscendant
 import com.example.starwars.utils.sort.Sorting.sortShipsWhenSearch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -256,8 +255,7 @@ private fun checkIfDataIsLoaded(
                     character -> {
                         CoroutineScope(Dispatchers.IO).launch {
                             if (allSpecies.isNullOrEmpty() && allCharacters.isNullOrEmpty()) {
-                                async { viewModel?.getCharacters() }
-                                async { viewModel?.getSpecies() }
+                                viewModel?.getCharacters()
                             }
                         }
                     }
