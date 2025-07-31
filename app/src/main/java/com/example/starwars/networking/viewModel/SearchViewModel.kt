@@ -63,11 +63,13 @@ class SearchViewModel(
                         getCharacters()
                     }
                 }
+
                 "Planets" -> {
                     if (com.example.starwars.screens.allPlanets.isNullOrEmpty()) {
                         getPlanets()
                     }
                 }
+
                 "Ships" -> {
                     if (com.example.starwars.screens.allShips.isNullOrEmpty()) {
                         getVehicles()
@@ -279,7 +281,7 @@ class SearchViewModel(
 
     fun searchCharactersByName(name: String): List<CharactersItem>? {
         if (filteredCharacters.isEmpty()) {
-            val characters = if (allCharacters.isNullOrEmpty()) allCharactersSaved else allCharacters
+            val characters = allCharactersSaved
             characters?.let { characters ->
                 return characters.filter { it.name.contains(name, ignoreCase = true) }
             }

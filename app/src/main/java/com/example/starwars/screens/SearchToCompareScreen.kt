@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
@@ -22,11 +21,9 @@ import com.example.starwars.components.ListResultsWithCheckBox
 import com.example.starwars.components.TopBarWithText
 import com.example.starwars.networking.model.characters.CharactersItem
 
-private var allCharactersToSearch: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
-
 @Composable
 fun ChooseCharacter(navController: NavHostController, itemId: String?, name: String?) {
-    allCharactersToSearch = allCharactersSaved?.filter { it.name != name }?.toMutableStateList()
+    val allCharactersToSearch = allCharactersSaved?.filter { it.name != name }?.toMutableStateList()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -38,7 +35,7 @@ fun ChooseCharacter(navController: NavHostController, itemId: String?, name: Str
             )
         },
         content = {
-            SearchToCompareScreenContent(navController, itemId, it)
+            SearchToCompareScreenContent(navController, itemId, it, allCharactersToSearch)
         }
     )
 }
@@ -47,7 +44,8 @@ fun ChooseCharacter(navController: NavHostController, itemId: String?, name: Str
 private fun SearchToCompareScreenContent(
     navController: NavHostController,
     itemId: String?,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    allCharactersToSearch: SnapshotStateList<CharactersItem>?
 ) {
     Column(
         modifier = Modifier

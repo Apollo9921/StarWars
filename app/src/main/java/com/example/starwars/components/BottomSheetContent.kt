@@ -38,6 +38,7 @@ import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.species.SpeciesItem
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.screens.allCharacters
+import com.example.starwars.screens.searchText
 import com.example.starwars.utils.filter.Filter.filterCharacters
 import com.example.starwars.utils.size.ScreenSizeUtils
 import com.example.starwars.utils.sort.Sorting
@@ -113,6 +114,7 @@ fun BottomSheetContent(
                 textAlign = TextAlign.Center,
                 lineHeight = 32.sp,
                 modifier = Modifier.clickable {
+                    searchText.value = ""
                     // Reset selected filters and character lists.
                     listSpeciesSelected.clear()
                     listGenderSelected.clear()
@@ -271,6 +273,7 @@ private fun SearchButton(
         onClick = {
             // Ensure viewModel is not null before proceeding, as filterCharacters requires it.
             viewModel?.let { vm ->
+                searchText.value = ""
                 val filteredCharacters =
                     filterCharacters(
                         listSpeciesSelected,
