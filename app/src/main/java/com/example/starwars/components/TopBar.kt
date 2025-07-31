@@ -148,9 +148,6 @@ fun TopBarWithText(
                 fontSize = titleSize,
                 textAlign = TextAlign.Center,
                 lineHeight = 32.sp,
-                // Modifier.weight(1f) might not be strictly necessary here if Row is centered
-                // and Text is the only child, but it doesn't harm.
-                // If there were other elements, it would ensure Text centers properly.
                 modifier = Modifier.weight(1f)
             )
         }
