@@ -41,7 +41,8 @@ fun BasicNavigation() {
         }
         composable(route = Screen.ChooseCharacter.route) {
             val itemId = navController.currentBackStackEntry?.arguments?.getString("itemId")
-            ChooseCharacter(navController = navController, itemId = itemId)
+            val name = navController.currentBackStackEntry?.arguments?.getString("name")
+            ChooseCharacter(navController = navController, itemId = itemId, name = name)
         }
         composable(route = Screen.CompareCharacters.route) {
             val itemId1 = navController.currentBackStackEntry?.arguments?.getString("itemId1")

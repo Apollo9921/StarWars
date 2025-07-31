@@ -112,7 +112,7 @@ fun DetailsScreen(
                     }
 
                     isSuccess == true -> {
-                        DetailsScreenContent(optionSelected, itemId, navController)
+                        DetailsScreenContent(optionSelected, itemId, name, navController)
                     }
                 }
             }
@@ -124,6 +124,7 @@ fun DetailsScreen(
 private fun DetailsScreenContent(
     optionSelected: String,
     itemId: String,
+    name: String,
     navController: NavHostController
 ) {
     Column(
@@ -134,7 +135,7 @@ private fun DetailsScreenContent(
     ) {
         when (optionSelected) {
             "Characters" -> {
-                CharacterDetailsScreen(navController, itemId)
+                CharacterDetailsScreen(navController, itemId, name)
             }
 
             "Planets" -> {
@@ -149,7 +150,7 @@ private fun DetailsScreenContent(
 }
 
 @Composable
-private fun CharacterDetailsScreen(navController: NavHostController, itemId: String) {
+private fun CharacterDetailsScreen(navController: NavHostController, itemId: String, name: String) {
     val titleSize = ScreenSizeUtils.calculateCustomWidth(20).sp
     val characterInfoSize = ScreenSizeUtils.calculateCustomWidth(14).sp
     val buttonText = ScreenSizeUtils.calculateCustomWidth(baseSize = 13).sp
@@ -218,7 +219,7 @@ private fun CharacterDetailsScreen(navController: NavHostController, itemId: Str
     ) {
         Button(
             onClick = {
-                navController.navigate("chooseCharacter/$itemId")
+                navController.navigate("chooseCharacter/$itemId/$name")
             },
             shape = RoundedCornerShape(percent = 30), // Apply rounded corners to the button.
             colors = ButtonDefaults.buttonColors(

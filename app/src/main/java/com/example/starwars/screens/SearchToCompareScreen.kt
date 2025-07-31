@@ -10,6 +10,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,8 +25,8 @@ import com.example.starwars.networking.model.characters.CharactersItem
 private var allCharactersToSearch: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 
 @Composable
-fun ChooseCharacter(navController: NavHostController, itemId: String?) {
-    allCharactersToSearch = allCharactersSaved
+fun ChooseCharacter(navController: NavHostController, itemId: String?, name: String?) {
+    allCharactersToSearch = allCharactersSaved?.filter { it.name != name }?.toMutableStateList()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
