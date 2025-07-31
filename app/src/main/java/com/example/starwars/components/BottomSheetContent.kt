@@ -20,7 +20,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -45,9 +44,6 @@ import com.example.starwars.utils.sort.Sorting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private var listSpeciesSelected: SnapshotStateList<String> = mutableStateListOf()
-private var listGenderSelected: SnapshotStateList<String> = mutableStateListOf()
-
 /**
  * Composable function that defines the content for a bottom sheet used for filtering characters.
  *
@@ -68,12 +64,10 @@ fun BottomSheetContent(
     allSpecies: SnapshotStateList<SpeciesItem>?,
     viewModel: SearchViewModel?,
     sortOptionNameYearSelected: Int,
-    sortOptionSelected: Int
+    sortOptionSelected: Int,
+    listSpeciesSelected: SnapshotStateList<String>,
+    listGenderSelected: SnapshotStateList<String>
 ) {
-    //TODO remove this two lists, but only when use leaves the search screen
-    //listSpeciesSelected.removeAll(listSpeciesSelected)
-    //listGenderSelected.removeAll(listGenderSelected)
-
     // Calculate dynamic sizes based on screen width for responsive UI.
     val filterOptionsText = ScreenSizeUtils.calculateCustomWidth(baseSize = 15).sp
     val imageSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
@@ -133,11 +127,21 @@ fun BottomSheetContent(
         Spacer(modifier = Modifier.padding(10.dp)) // Vertical spacing.
 
         // Display filter options for species.
-        OptionsByType(specieFilterOptions, stringResource(R.string.filter_specie_option))
+        OptionsByType(
+            specieFilterOptions,
+            stringResource(R.string.filter_specie_option),
+            listSpeciesSelected,
+            listGenderSelected
+        )
         Spacer(modifier = Modifier.padding(20.dp)) // Vertical spacing.
 
         // Display filter options for gender.
-        OptionsByType(genderFilterOptions, stringResource(R.string.filter_gender_option))
+        OptionsByType(
+            genderFilterOptions,
+            stringResource(R.string.filter_gender_option),
+            listSpeciesSelected,
+            listGenderSelected
+        )
         Spacer(modifier = Modifier.padding(20.dp)) // Vertical spacing.
 
         // Button to apply the selected filters.
@@ -148,7 +152,9 @@ fun BottomSheetContent(
             allSpecies,
             sortOptionNameYearSelected,
             sortOptionSelected,
-            viewModel
+            viewModel,
+            listSpeciesSelected,
+            listGenderSelected
         )
     }
 }
@@ -161,7 +167,12 @@ fun BottomSheetContent(
  * @param text The title or type of the filter group (e.g., "Species", "Gender").
  */
 @Composable
-private fun OptionsByType(filterOptionsText: List<String>, text: String) {
+private fun OptionsByType(
+    filterOptionsText: List<String>,
+    text: String,
+    listSpeciesSelected: SnapshotStateList<String>,
+    listGenderSelected: SnapshotStateList<String>
+) {
     val textSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 15).sp
     // Get string resources for comparison to determine which global list to update.
     val specie = stringResource(R.string.filter_specie_option)
@@ -251,7 +262,9 @@ private fun SearchButton(
     allSpecies: SnapshotStateList<SpeciesItem>?,
     sortOptionNameYearSelected: Int,
     sortOptionSelected: Int,
-    viewModel: SearchViewModel?
+    viewModel: SearchViewModel?,
+    listSpeciesSelected: SnapshotStateList<String>,
+    listGenderSelected: SnapshotStateList<String>
 ) {
     val textSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp
     Button(

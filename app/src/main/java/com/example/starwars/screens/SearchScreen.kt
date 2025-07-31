@@ -91,6 +91,9 @@ import org.koin.androidx.compose.koinViewModel
 private var viewModel: SearchViewModel? = null
 private var sortOptionNameYearSelected = mutableIntStateOf(0)
 private var sortOptionSelected = mutableIntStateOf(0)
+private var searchText = mutableStateOf("")
+private var listSpeciesSelected: SnapshotStateList<String> = mutableStateListOf()
+private var listGenderSelected: SnapshotStateList<String> = mutableStateListOf()
 private var allSpecies: SnapshotStateList<SpeciesItem>? = mutableStateListOf<SpeciesItem>()
 var allCharactersSaved: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
@@ -116,7 +119,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
     val isError = viewModel?.isError?.value
     val errorMessage = viewModel?.errorMessage?.value
 
-    if (allCharacters.isNullOrEmpty()) {
+    if (allCharacters.isNullOrEmpty() || allSpecies.isNullOrEmpty()) {
         allCharacters = viewModel?.allCharacters?.toMutableStateList()
         allCharactersSaved = viewModel?.allCharacters?.toMutableStateList()
         allSpecies = viewModel?.allSpecies?.toMutableStateList()
@@ -159,7 +162,9 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                 allSpecies,
                 viewModel,
                 sortOptionNameYearSelected.intValue,
-                sortOptionSelected.intValue
+                sortOptionSelected.intValue,
+                listSpeciesSelected,
+                listGenderSelected
             )
         },
         sheetPeekHeight = sheetMaxHeight,
@@ -197,6 +202,9 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                     sortOptionNameYearSelected.intValue = 0
                     sortOptionSelected.intValue = 0
                     viewModel?.filteredCharacters = emptyList()
+                    allCharacters = allCharactersSaved
+                    listSpeciesSelected.clear()
+                    listGenderSelected.clear()
                     navController.navigateUp()
                 },
                 imageResId = R.drawable.logo
@@ -231,6 +239,9 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                 }
 
                 isSuccess == true -> {
+                    if (searchText.value.isNotEmpty()) {
+                        onSearchQuery(searchText.value, character, planet, ship, optionSelected)
+                    }
                     ListResults(allCharacters, allPlanets, allShips, optionSelected, navController)
                     SortResultByDefault(character, planet, ship, optionSelected)
                 }
@@ -317,7 +328,6 @@ private fun SearchBar(
     } else {
         ScreenSizeUtils.calculateCustomWidth(baseSize = 24).sp
     }
-    val searchText = remember { mutableStateOf("") }
     val searchBarWidth = ScreenSizeUtils.calculateCustomWidth(baseSize = 320).dp
 
     var notInternet = remember { mutableStateOf(false) }
@@ -547,6 +557,9 @@ private fun BackStack(navController: NavHostController) {
         sortOptionNameYearSelected.intValue = 0
         sortOptionSelected.intValue = 0
         viewModel?.filteredCharacters = emptyList()
+        allCharacters = allCharactersSaved
+        listSpeciesSelected.clear()
+        listGenderSelected.clear()
         navController.navigateUp()
     }
 }
