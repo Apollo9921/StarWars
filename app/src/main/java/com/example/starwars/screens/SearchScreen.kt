@@ -67,6 +67,7 @@ import com.example.starwars.core.customFonts
 import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
+import com.example.starwars.networking.model.species.SpeciesItem
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.utils.lockOrientation.LockOrientation
 import com.example.starwars.utils.network.ConnectivityObserver
@@ -82,6 +83,8 @@ import com.example.starwars.utils.sort.Sorting.sortPlanetsWhenSearch
 import com.example.starwars.utils.sort.Sorting.sortShipsNameAscendant
 import com.example.starwars.utils.sort.Sorting.sortShipsWhenSearch
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -89,6 +92,7 @@ import org.koin.androidx.compose.koinViewModel
 private var viewModel: SearchViewModel? = null
 private var sortOptionNameYearSelected = mutableIntStateOf(0)
 private var sortOptionSelected = mutableIntStateOf(0)
+private var allSpecies: SnapshotStateList<SpeciesItem>? = mutableStateListOf<SpeciesItem>()
 var allCharactersSaved: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allCharacters: SnapshotStateList<CharactersItem>? = mutableStateListOf<CharactersItem>()
 var allPlanets: SnapshotStateList<PlanetsItem>? = mutableStateListOf<PlanetsItem>()
@@ -116,6 +120,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
     if (allCharacters.isNullOrEmpty()) {
         allCharacters = viewModel?.allCharacters?.toMutableStateList()
         allCharactersSaved = viewModel?.allCharacters?.toMutableStateList()
+        allSpecies = viewModel?.allSpecies?.toMutableStateList()
     } else {
         viewModel?.isSuccess?.value = true
     }
@@ -152,6 +157,7 @@ fun SearchScreen(navController: NavHostController, optionSelected: String) {
                 scope,
                 scaffoldState,
                 allCharactersSaved,
+                allSpecies,
                 viewModel,
                 sortOptionNameYearSelected.intValue,
                 sortOptionSelected.intValue
@@ -247,11 +253,22 @@ private fun checkIfDataIsLoaded(
             if (networkStatus?.value == ConnectivityObserver.Status.Available && !isConnected.value) {
                 isConnected.value = true
                 when (option.value) {
-                    character -> { viewModel?.getCharacters() }
+                    character -> {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (allSpecies.isNullOrEmpty() && allCharacters.isNullOrEmpty()) {
+                                async { viewModel?.getCharacters() }
+                                async { viewModel?.getSpecies() }
+                            }
+                        }
+                    }
 
-                    planet -> { viewModel?.getPlanets() }
+                    planet -> {
+                        viewModel?.getPlanets()
+                    }
 
-                    ship -> { viewModel?.getVehicles() }
+                    ship -> {
+                        viewModel?.getVehicles()
+                    }
                 }
             }
         }

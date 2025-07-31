@@ -36,6 +36,7 @@ import com.example.starwars.core.Primary
 import com.example.starwars.core.Tertiary
 import com.example.starwars.core.customFonts
 import com.example.starwars.networking.model.characters.CharactersItem
+import com.example.starwars.networking.model.species.SpeciesItem
 import com.example.starwars.networking.viewModel.SearchViewModel
 import com.example.starwars.screens.allCharacters
 import com.example.starwars.utils.filter.Filter.filterCharacters
@@ -64,6 +65,7 @@ fun BottomSheetContent(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState,
     allCharactersSaved: SnapshotStateList<CharactersItem>?,
+    allSpecies: SnapshotStateList<SpeciesItem>?,
     viewModel: SearchViewModel?,
     sortOptionNameYearSelected: Int,
     sortOptionSelected: Int
@@ -77,12 +79,12 @@ fun BottomSheetContent(
     val imageSize = ScreenSizeUtils.calculateCustomWidth(baseSize = 25).dp
 
     val specieFilterOptions = listOf(
-        "Human",
+        "Gungan",
         "Droid",
-        "Ewoks",
-        "Keshiri",
-        "Zeltrons",
-        "Jawas"
+        "Wookie",
+        "Rodian",
+        "Zabrak",
+        "Mirialan"
     )
 
     val genderFilterOptions = listOf(
@@ -143,6 +145,7 @@ fun BottomSheetContent(
             scope,
             scaffoldState,
             allCharactersSaved,
+            allSpecies,
             sortOptionNameYearSelected,
             sortOptionSelected,
             viewModel
@@ -180,7 +183,11 @@ private fun OptionsByType(filterOptionsText: List<String>, text: String) {
         filterOptionsText.forEach { optionText ->
             // `isSelected` state is remembered for each button individually.
             val isSelected = remember {
-                mutableStateOf(listSpeciesSelected.contains(optionText) || listGenderSelected.contains(optionText))
+                mutableStateOf(
+                    listSpeciesSelected.contains(optionText) || listGenderSelected.contains(
+                        optionText
+                    )
+                )
             }
 
             Button(
@@ -205,7 +212,10 @@ private fun OptionsByType(filterOptionsText: List<String>, text: String) {
                 shape = RoundedCornerShape(percent = 50), // Circular buttons.
                 colors = ButtonDefaults.buttonColors(
                     // Button color changes based on whether the option is selected in the global lists.
-                    containerColor = if (listSpeciesSelected.contains(optionText) || listGenderSelected.contains(optionText)) Primary else Tertiary,
+                    containerColor = if (listSpeciesSelected.contains(optionText) || listGenderSelected.contains(
+                            optionText
+                        )
+                    ) Primary else Tertiary,
                     contentColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
@@ -238,6 +248,7 @@ private fun SearchButton(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState,
     allCharactersSaved: SnapshotStateList<CharactersItem>?,
+    allSpecies: SnapshotStateList<SpeciesItem>?,
     sortOptionNameYearSelected: Int,
     sortOptionSelected: Int,
     viewModel: SearchViewModel?
@@ -248,14 +259,26 @@ private fun SearchButton(
             // Ensure viewModel is not null before proceeding, as filterCharacters requires it.
             viewModel?.let { vm ->
                 val filteredCharacters =
-                    filterCharacters(listSpeciesSelected, listGenderSelected, allCharactersSaved)
+                    filterCharacters(
+                        listSpeciesSelected,
+                        listGenderSelected,
+                        allCharactersSaved,
+                        allSpecies
+                    )
 
-                // Update the global allCharacters list.
-                allCharacters?.clear()
-                filteredCharacters?.let { elements -> allCharacters?.addAll(elements) }
+                if (filteredCharacters?.isNotEmpty() == true) {
+                    // Update the global allCharacters list.
+                    allCharacters?.clear()
+                    filteredCharacters.let { elements -> allCharacters?.addAll(elements) }
 
-                // Update the ViewModel's list of filtered characters.
-                vm.filteredCharacters = filteredCharacters ?: emptyList()
+                    // Update the ViewModel's list of filtered characters.
+                    vm.filteredCharacters = filteredCharacters
+                } else {
+                    // If filtering fails, use the original list.
+                    vm.filteredCharacters = emptyList()
+                    allCharacters?.clear()
+                    allCharacters?.addAll(allCharactersSaved ?: emptyList())
+                }
 
                 // "when filtering also sorting to the corresponding option is selected"
                 Sorting.sortCharacterWhenSearch(sortOptionNameYearSelected, sortOptionSelected)

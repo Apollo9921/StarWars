@@ -3,6 +3,7 @@ package com.example.starwars.koin
 import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
+import com.example.starwars.networking.model.species.SpeciesItem
 import com.example.starwars.networking.requests.Service
 import retrofit2.Response
 
@@ -74,5 +75,9 @@ class StarWarsRepositoryImpl(
      */
     override suspend fun getStarshipById(id: Int): Response<ShipsItem> {
         return service.getStarshipById(id)
+    }
+
+    override suspend fun getAllSpecies(): Response<List<SpeciesItem>> {
+        return service.getAllSpecies()
     }
 }

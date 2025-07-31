@@ -3,6 +3,7 @@ package com.example.starwars.networking.requests
 import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
+import com.example.starwars.networking.model.species.SpeciesItem
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -63,4 +64,7 @@ interface Service {
      */
     @GET("starships/{id}")
     suspend fun getStarshipById(@Path("id") id: Int): Response<ShipsItem>
+
+    @GET("species")
+    suspend fun getAllSpecies(): Response<List<SpeciesItem>>
 }

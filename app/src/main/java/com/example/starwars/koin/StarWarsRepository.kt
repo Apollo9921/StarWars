@@ -3,6 +3,7 @@ package com.example.starwars.koin
 import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
+import com.example.starwars.networking.model.species.SpeciesItem
 import retrofit2.Response
 
 /**
@@ -59,4 +60,6 @@ interface StarWarsRepository {
      * @return A Retrofit [Response] containing a [ShipsItem] on success.
      */
     suspend fun getStarshipById(id: Int): Response<ShipsItem>
+
+    suspend fun getAllSpecies(): Response<List<SpeciesItem>>
 }

@@ -7,6 +7,7 @@ import com.example.starwars.koin.StarWarsRepository
 import com.example.starwars.networking.model.characters.CharactersItem
 import com.example.starwars.networking.model.planets.PlanetsItem
 import com.example.starwars.networking.model.ships.ShipsItem
+import com.example.starwars.networking.model.species.SpeciesItem
 import com.example.starwars.screens.option
 import com.example.starwars.utils.network.ConnectivityObserver
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,9 @@ class SearchViewModel(
     private val _vehicleState = MutableStateFlow<VehicleState>(VehicleState.Error("Unknown error"))
     private val vehicleState: StateFlow<VehicleState> = _vehicleState
 
+    private val _speciesState = MutableStateFlow<SpeciesState>(SpeciesState.Error("Unknown error"))
+    private val speciesState: StateFlow<SpeciesState> = _speciesState
+
     var isLoading = mutableStateOf(false)
     var isSuccess = mutableStateOf(false)
     var isError = mutableStateOf(false)
@@ -38,6 +42,7 @@ class SearchViewModel(
     var allCharacters: List<CharactersItem>? = null
     var allPlanets: List<PlanetsItem>? = null
     var allVehicles: List<ShipsItem>? = null
+    var allSpecies: List<SpeciesItem>? = null
 
     var filteredCharacters: List<CharactersItem> = emptyList()
 
@@ -86,6 +91,11 @@ class SearchViewModel(
         data class Error(val message: String) : VehicleState()
     }
 
+    sealed class SpeciesState {
+        data class Success(val species: List<SpeciesItem>) : SpeciesState()
+        data class Error(val message: String) : SpeciesState()
+    }
+
     fun getCharacters() {
         viewModelScope.launch {
             try {
@@ -117,7 +127,9 @@ class SearchViewModel(
                         allCharacters = state.characters
                         isLoading.value = false
                         isError.value = false
-                        isSuccess.value = true
+                        if (allCharacters != null && allSpecies != null) {
+                            isSuccess.value = true
+                        }
                     }
 
                     is CharacterState.Error -> {
@@ -213,6 +225,53 @@ class SearchViewModel(
                         isLoading.value = false
                         isError.value = false
                         isSuccess.value = true
+                    }
+                }
+            }
+        }
+    }
+
+    fun getSpecies() {
+        viewModelScope.launch {
+            try {
+                isLoading.value = true
+                if (networkStatus.value == ConnectivityObserver.Status.Unavailable) {
+                    _speciesState.value = SpeciesState.Error("No Internet Connection")
+                    isLoading.value = false
+                    return@launch
+                }
+                val getSpecies = repository.getAllSpecies()
+                if (getSpecies.isSuccessful && getSpecies.body() != null) {
+                    _speciesState.value = SpeciesState.Success(getSpecies.body()!!)
+                } else {
+                    _speciesState.value = SpeciesState.Error(getSpecies.message())
+                }
+            } catch (e: Exception) {
+                _speciesState.value = SpeciesState.Error(e.message ?: "Unknown error")
+            } finally {
+                observeSpecies()
+            }
+        }
+    }
+
+    private fun observeSpecies() {
+        viewModelScope.launch {
+            speciesState.collect { state ->
+                when (state) {
+                    is SpeciesState.Error -> {
+                        errorMessage.value = state.message
+                        isError.value = true
+                        isLoading.value = false
+                        isSuccess.value = false
+                    }
+
+                    is SpeciesState.Success -> {
+                        allSpecies = state.species
+                        isLoading.value = false
+                        isError.value = false
+                        if (allCharacters != null && allSpecies != null) {
+                            isSuccess.value = true
+                        }
                     }
                 }
             }
